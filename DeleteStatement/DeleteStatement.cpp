@@ -42,5 +42,3 @@ DeleteStatement::~DeleteStatement()
 {
     delete this->condition;
 }
-
-#endif

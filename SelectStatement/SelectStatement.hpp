@@ -14,7 +14,7 @@ class SelectStatement : public Statement{
         SelectStatement(std::vector<std::string> columns, std::string table, Condition *condition);
 
         //Execute
-        virtual void execute() override;
+        void execute() override;
 
         //Setters
         void setTable(const std::string &table);
@@ -27,7 +27,7 @@ class SelectStatement : public Statement{
         Condition *getCondition() const;
 
         //Destructor
-        ~SelectStatement();
+        ~SelectStatement() override;
     private:
         std::vector<std::string> columns;
         std::string table;

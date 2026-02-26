@@ -13,7 +13,7 @@ class InsertStatement : public Statement{
              std::vector<std::string> values);
 
         //Execute
-        virtual void execute() override;
+        void execute() override;
 
         //Setters
         void setTable(const std::string &table);
@@ -26,7 +26,7 @@ class InsertStatement : public Statement{
         std::vector<std::string> getColumns() const;
 
         //Destructor
-        ~InsertStatement();
+        ~InsertStatement() override;
     private:
         std::string table;
         std::vector<std::string> values;

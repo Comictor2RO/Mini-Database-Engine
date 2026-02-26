@@ -13,7 +13,7 @@ class DeleteStatement : public Statement{
         DeleteStatement(std::string table, Condition *condition);
 
         //Execute
-        virtual void execute() override;
+        void execute() override;
 
         //Setters
         void setTable(const std::string &table);
@@ -24,8 +24,10 @@ class DeleteStatement : public Statement{
         Condition *getCondition() const;
 
         //Destructor
-        ~DeleteStatement();
+        ~DeleteStatement() override;
     private:
         std::string table;
         Condition *condition;
 };
+
+#endif
