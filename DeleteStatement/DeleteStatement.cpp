@@ -32,7 +32,7 @@ std::string DeleteStatement::getTable() const
     return this->table;
 }
 
-std::vector<std::string> DeleteStatement::getCondition() const
+Condition *DeleteStatement::getCondition() const
 {
     return this->condition;
 }
@@ -42,3 +42,5 @@ DeleteStatement::~DeleteStatement()
 {
     delete this->condition;
 }
+
+#endif
