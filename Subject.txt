@@ -1,0 +1,28 @@
+1) Mini Database Engine (gen SQLite Lite)
+Un proiect excelent pentru CV, pentru că arată:
+• 	structuri de date avansate
+• 	gestionarea memoriei
+• 	parsing
+• 	optimizări
+Ce implementezi:
+• 	Un limbaj simplu de query (SELECT, INSERT, DELETE)
+• 	Stocare pe pagini (page-based storage)
+• 	Indexare cu B+ Trees
+• 	Cache pentru pagini
+• 	Write‑ahead logging
+Extensie Hard‑Mode:
+• 	Query planner + cost estimation
+• 	Concurență (MVCC simplificat)
+
+
+
+1. SQL Parser
+Primește un string gen SELECT * FROM users WHERE id = 5 și îl transformă într-o structură de date pe care programul o înțelege (un AST — Abstract Syntax Tree). Fără parser, engine-ul nu știe ce vrei de la el.
+2. Page-Based Storage (Stocare pe pagini)
+Datele nu se scriu direct în fișier rând cu rând. Fișierul este împărțit în pagini de dimensiune fixă (ex. 4KB fiecare), iar rândurile sunt ambalate în aceste pagini. Asta imită exact cum funcționează un HDD/SSD — citești și scrii blocuri, nu octeți individuali.
+3. B+ Tree Index
+O structură de date arborescentă care permite găsirea rapidă a unui rând după cheie primară, fără să scanezi toată tabla. Fără index, SELECT WHERE id = 999 ar citi toate paginile. Cu B+ Tree, ajungi direct.
+4. Page Cache (Buffer Pool)
+Cititul din fișier e lent. Cache-ul ține în memorie RAM paginile recent accesate. Dacă pagina cerută e deja în cache → o iei din RAM. Dacă nu → o citești de pe disc și o pui în cache (cu o politică de evicție, ex. LRU).
+5. Write-Ahead Log (WAL)
+Înainte să modifici efectiv o pagină pe disc, scrii mai întâi modificarea într-un log. Dacă programul crapă la mijloc, la restart poți reface sau anula tranzacția — datele rămân consistente. Ăsta e fundamentul durabilității în orice bază de date serioasă.
