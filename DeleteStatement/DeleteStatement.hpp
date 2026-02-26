@@ -3,7 +3,6 @@
 
 #include "../Statement/Statement.hpp"
 #include "../Condition/Condition.hpp"
-#include <vector>
 #include <string>
 
 class DeleteStatement : public Statement{
