@@ -1,0 +1,2 @@
+#ifndef __DELETE_STATEMENT_HPP__
+#define __DELETE_STATEMENT_HPP__
