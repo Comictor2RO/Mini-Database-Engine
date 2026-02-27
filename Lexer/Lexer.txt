@@ -1,0 +1,4 @@
+He receives a string and he tokenize the string in KEYWORD,
+STRING, OPERATOR, WILDCARD, PUNCTUATION, IDENTIFIER, OPERATOR
+and END_OF_FILE.
+Every token has one of the types above and a value which is the string.

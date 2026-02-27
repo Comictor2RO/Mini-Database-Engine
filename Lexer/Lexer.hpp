@@ -13,6 +13,7 @@ enum class TokenType{
     NUMBER,
     OPERATOR,
     PUNCTUATION,
+    WILDCARD,
     END_OF_FILE
 };
 
@@ -36,6 +37,7 @@ class Lexer{
         Token readString();
         Token readOperator();
         Token readPunctuation();
+        Token readWildcard();
 };
 
 #endif

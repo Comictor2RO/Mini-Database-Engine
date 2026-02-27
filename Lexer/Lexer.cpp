@@ -89,6 +89,14 @@ Token Lexer::readPunctuation()
     return {TokenType::PUNCTUATION, std::string(1, punctuation)};
 }
 
+//Read widlcard *
+Token Lexer::readWildcard()
+{
+    const char wildcard = input[position];
+    position++;
+    return {TokenType::WILDCARD, std::string(1, wildcard)};
+}
+
 //Tokenize
 std::vector<Token> Lexer::tokenize()
 {
@@ -119,10 +127,13 @@ std::vector<Token> Lexer::tokenize()
         {
             tokens.push_back(readOperator());
         }
-        else if(currentCharacter == '(' || currentCharacter == ')' || currentCharacter == ','
-            || currentCharacter == '*')
+        else if(currentCharacter == '(' || currentCharacter == ')' || currentCharacter == ',')
         {
             tokens.push_back(readPunctuation());
+        }
+        else if(currentCharacter == '*')
+        {
+            tokens.push_back(readWildcard());
         }
         else
         {

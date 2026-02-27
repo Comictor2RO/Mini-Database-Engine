@@ -21,4 +21,6 @@ add_executable(Mini_Database_Engine
         SelectStatement/SelectStatement.cpp
         SelectStatement/SelectStatement.hpp
         Statement/Statement.hpp
-        main.cpp)
+        main.cpp
+        Parser/Parser.cpp
+        Parser/Parser.hpp)
