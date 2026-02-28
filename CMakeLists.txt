@@ -33,4 +33,6 @@ add_executable(Mini_Database_Engine
         Frontend/Lexer/TokenType.hpp
         AST/CreateStatement/CreateStatement.cpp
         AST/CreateStatement/CreateStatement.hpp
-        AST/Columns/Columns.hpp)
+        AST/Columns/Columns.hpp
+        Catalog/Catalog.cpp
+        Catalog/Catalog.hpp)
