@@ -5,6 +5,7 @@
 #include "../../AST/SelectStatement/SelectStatement.hpp"
 #include "../../AST/InsertStatement/InsertStatement.hpp"
 #include "../../AST/DeleteStatement/DeleteStatement.hpp"
+#include "../../AST/CreateStatement/CreateStatement.hpp"
 #include <vector>
 
 class Parser {
@@ -18,6 +19,7 @@ class Parser {
         Token currentToken();
         Token consumeToken();
 
+        CreateStatement *parseCreate();
         SelectStatement *parseSelect();
         InsertStatement *parseInsert();
         DeleteStatement *parseDelete();

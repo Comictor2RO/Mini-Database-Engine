@@ -28,4 +28,9 @@ add_executable(Mini_Database_Engine
         Storage/Page/Page.hpp
         Storage/PageHeader/PageHeader.hpp
         Storage/PageManager/PageManager.cpp
-        Storage/PageManager/PageManager.hpp)
+        Storage/PageManager/PageManager.hpp
+        Frontend/Lexer/Token.hpp
+        Frontend/Lexer/TokenType.hpp
+        AST/CreateStatement/CreateStatement.cpp
+        AST/CreateStatement/CreateStatement.hpp
+        AST/Columns/Columns.hpp)

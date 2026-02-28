@@ -9,17 +9,11 @@
 
 int main()
 {
-    PageManager pm("mydb.dat");
+    Lexer lexer("CREATE TABLE users (id INT, name STRING, age INT)");
+    auto tokens = lexer.tokenize();
+    Parser parser(tokens);
+    auto stmt = (CreateStatement*)parser.parse();
 
-    // Inserează rows
-    pm.insertRow("Ion|25|ion@email.com");
-    pm.insertRow("Ana|30|ana@email.com");
-    pm.insertRow("Maria|22|maria@email.com");
-
-    // Citește toate rows
-    auto rows = pm.getAllRows();
-    for (const auto& row : rows)
-        std::cout << row << '\n';
-
-    return 0;
+    for (auto& col : stmt->getColumns())
+        std::cout << col.name << " " << col.type << '\n';
 }

@@ -16,6 +16,33 @@ Token Parser::consumeToken()
     return t;
 }
 
+CreateStatement *Parser::parseCreate() {
+    consumeToken(); //Jumps over CREATE
+    consumeToken(); //Jumps over TABLE
+    std::string table = consumeToken().value; //Saves table name
+
+    std::vector<Columns> columns;
+
+    consumeToken(); //Jumps over (
+
+    while (currentToken().value != ")" && currentToken().type != TokenType::END_OF_FILE)
+    {
+        if (currentToken().value == ",")
+        {
+            consumeToken(); //Jumps over ,
+            continue;
+        }
+        Columns col;
+        col.name = consumeToken().value; //Column name  ex: "id"
+        col.type = consumeToken().value; //Column type  ex: "INT"
+        columns.push_back(col);
+    }
+
+    consumeToken(); //Jumps over )
+
+    return new CreateStatement(table, columns);
+}
+
 SelectStatement *Parser::parseSelect()
 {
     consumeToken(); //Jumps over SELECT
@@ -115,5 +142,7 @@ Statement *Parser::parse()
         return parseInsert();
     if (token.value == "DELETE")
         return parseDelete();
+    if (token.value == "CREATE")
+        return parseCreate();
     return nullptr;
 }

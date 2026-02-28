@@ -31,7 +31,8 @@ Token Lexer::readWord()
 
     if(uppercaseWord == "SELECT" || uppercaseWord == "INSERT" || uppercaseWord == "DELETE"
         || uppercaseWord == "FROM" || uppercaseWord == "WHERE" || uppercaseWord == "INTO"
-        || uppercaseWord == "VALUES")
+        || uppercaseWord == "VALUES" || uppercaseWord == "CREATE" || uppercaseWord == "TABLE"
+        || uppercaseWord == "INT" || uppercaseWord == "STRING")
     {
         return {TokenType::KEYWORD, uppercaseWord};
     }

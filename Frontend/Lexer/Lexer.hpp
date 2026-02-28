@@ -1,31 +1,18 @@
 #ifndef LEXER_HPP
 #define LEXER_HPP
 
+#include "Token.hpp"
 #include <string>
 #include <vector>
 #include <cctype>
 
-//Token types for the tokens that the lexer will return
-enum class TokenType{
-    KEYWORD,
-    IDENTIFIER,
-    STRING,
-    NUMBER,
-    OPERATOR,
-    PUNCTUATION,
-    WILDCARD,
-    END_OF_FILE
-};
-
-//Token struct holds the type and value of the token
-struct Token{
-    TokenType type;
-    std::string value;
-};
-
 class Lexer{
     public:
-    explicit Lexer(std::string input);
+
+        //Constructor
+        explicit Lexer(std::string input);
+
+        //Method
         std::vector<Token> tokenize();
     private:
         std::string input;
