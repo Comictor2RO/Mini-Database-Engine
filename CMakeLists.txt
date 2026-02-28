@@ -26,4 +26,6 @@ add_executable(Mini_Database_Engine
         frontend/Parser/Parser.hpp
         Storage/Page/Page.cpp
         Storage/Page/Page.hpp
-        Storage/PageHeader/PageHeader.hpp)
+        Storage/PageHeader/PageHeader.hpp
+        Storage/PageManager/PageManager.cpp
+        Storage/PageManager/PageManager.hpp)
