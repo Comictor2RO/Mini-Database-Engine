@@ -49,6 +49,16 @@ int Page::getFreeSpace() const
     return header->freeSpace;
 }
 
+char *Page::getBuffer()
+{
+    return data;
+}
+
+const char *Page::getBuffer() const
+{
+    return data;
+}
+
 bool Page::hasSpace(int rowSize) const
 {
     PageHeader *header = (PageHeader *)data;

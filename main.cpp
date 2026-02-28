@@ -5,24 +5,21 @@
 #include "Frontend/Lexer/Lexer.hpp"
 #include "Storage/Page/Page.hpp"
 #include "Frontend/Parser/Parser.hpp"
+#include "Storage/PageManager/PageManager.hpp"
 
 int main()
 {
-    Page page(0);
+    PageManager pm("mydb.dat");
 
-    std::cout << "PageId: " << page.getPageId() << '\n';
-    std::cout << "FreeSpace initial: " << page.getFreeSpace() << '\n';
+    // Inserează rows
+    pm.insertRow("Ion|25|ion@email.com");
+    pm.insertRow("Ana|30|ana@email.com");
+    pm.insertRow("Maria|22|maria@email.com");
 
-    page.addRow("Ana|25|ana@email.com");
-    page.addRow("Ion|30|ion@email.com");
-    page.addRow("Maria|22|maria@email.com");
-
-    std::cout << "FreeSpace dupa 3 randuri: " << page.getFreeSpace() << '\n';
-
-    std::vector<std::string> rows = page.getRows();
-    std::cout << "Numar randuri: " << rows.size() << '\n';
+    // Citește toate rows
+    auto rows = pm.getAllRows();
     for (const auto& row : rows)
-        std::cout << "Row: " << row << '\n';
+        std::cout << row << '\n';
 
     return 0;
 }

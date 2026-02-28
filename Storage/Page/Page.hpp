@@ -21,6 +21,8 @@ class Page {
         std::vector<std::string> getRows() const;
         int getPageId() const;
         int getFreeSpace() const;
+        char *getBuffer();
+        const char *getBuffer() const;
 
         ~Page();
     private:
