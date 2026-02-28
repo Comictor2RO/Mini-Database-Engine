@@ -23,4 +23,7 @@ add_executable(Mini_Database_Engine
         Statement/Statement.hpp
         main.cpp
         Parser/Parser.cpp
-        Parser/Parser.hpp)
+        Parser/Parser.hpp
+        Page/Page.cpp
+        Page/Page.hpp
+        PageHeader/PageHeader.hpp)
