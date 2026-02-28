@@ -3,27 +3,27 @@ project(Mini_Database_Engine)
 
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories(Condition)
-include_directories(DeleteStatement)
-include_directories(InsertStatement)
-include_directories(Lexer)
-include_directories(SelectStatement)
-include_directories(Statement)
+include_directories(AST/Condition)
+include_directories(AST/DeleteStatement)
+include_directories(AST/InsertStatement)
+include_directories(frontend/Lexer)
+include_directories(AST/SelectStatement)
+include_directories(AST/Statement)
 
 add_executable(Mini_Database_Engine
-        Condition/Condition.hpp
-        DeleteStatement/DeleteStatement.cpp
-        DeleteStatement/DeleteStatement.hpp
-        InsertStatement/InsertStatement.cpp
-        InsertStatement/InsertStatement.hpp
-        Lexer/Lexer.cpp
-        Lexer/Lexer.hpp
-        SelectStatement/SelectStatement.cpp
-        SelectStatement/SelectStatement.hpp
-        Statement/Statement.hpp
+        AST/Condition/Condition.hpp
+        AST/DeleteStatement/DeleteStatement.cpp
+        AST/DeleteStatement/DeleteStatement.hpp
+        AST/InsertStatement/InsertStatement.cpp
+        AST/InsertStatement/InsertStatement.hpp
+        frontend/Lexer/Lexer.cpp
+        frontend/Lexer/Lexer.hpp
+        AST/SelectStatement/SelectStatement.cpp
+        AST/SelectStatement/SelectStatement.hpp
+        AST/Statement/Statement.hpp
         main.cpp
-        Parser/Parser.cpp
-        Parser/Parser.hpp
-        Page/Page.cpp
-        Page/Page.hpp
-        PageHeader/PageHeader.hpp)
+        frontend/Parser/Parser.cpp
+        frontend/Parser/Parser.hpp
+        Storage/Page/Page.cpp
+        Storage/Page/Page.hpp
+        Storage/PageHeader/PageHeader.hpp)

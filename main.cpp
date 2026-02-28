@@ -1,39 +1,28 @@
 #include <iostream>
-#include "SelectStatement/SelectStatement.hpp"
-#include "InsertStatement/InsertStatement.hpp"
-#include "DeleteStatement/DeleteStatement.hpp"
-#include "Lexer/Lexer.hpp"
-#include "Parser/Parser.hpp"
+#include "AST/SelectStatement/SelectStatement.hpp"
+#include "AST/InsertStatement/InsertStatement.hpp"
+#include "AST/DeleteStatement/DeleteStatement.hpp"
+#include "Frontend/Lexer/Lexer.hpp"
+#include "Storage/Page/Page.hpp"
+#include "Frontend/Parser/Parser.hpp"
 
 int main()
 {
-    Lexer lexer("Select name, age from users where age < 18");
-    std::vector<Token> tokens = lexer.tokenize();
+    Page page(0);
 
-    Parser parser(tokens);
-    Statement *statement = parser.parse();
+    std::cout << "PageId: " << page.getPageId() << '\n';
+    std::cout << "FreeSpace initial: " << page.getFreeSpace() << '\n';
 
-    SelectStatement *select_statement = dynamic_cast<SelectStatement *>(statement);
-    if (select_statement)
-    {
-        std::cout << "Table: " << select_statement->getTable() << '\n';
-        for (const auto &token : select_statement->getColumns())
-        {
-            std::cout << "Column: " << token << '\n';
-        }
-        if (select_statement->getCondition())
-        {
-            std::cout << "Condition: " << select_statement->getCondition()->column
-                      << " " << select_statement->getCondition()->op
-                      << " " << select_statement->getCondition()->value << '\n';
-        }
+    page.addRow("Ana|25|ana@email.com");
+    page.addRow("Ion|30|ion@email.com");
+    page.addRow("Maria|22|maria@email.com");
 
-    }
-    else
-    {
-        std::cout << "Error: Invalid command.";
-    }
+    std::cout << "FreeSpace dupa 3 randuri: " << page.getFreeSpace() << '\n';
 
-    delete statement;
+    std::vector<std::string> rows = page.getRows();
+    std::cout << "Numar randuri: " << rows.size() << '\n';
+    for (const auto& row : rows)
+        std::cout << "Row: " << row << '\n';
+
     return 0;
 }

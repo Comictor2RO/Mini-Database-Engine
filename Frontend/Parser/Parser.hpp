@@ -2,9 +2,9 @@
 #define PARSER_HPP
 
 #include "../Lexer/Lexer.hpp"
-#include "../SelectStatement/SelectStatement.hpp"
-#include "../InsertStatement/InsertStatement.hpp"
-#include "../DeleteStatement/DeleteStatement.hpp"
+#include "../../AST/SelectStatement/SelectStatement.hpp"
+#include "../../AST/InsertStatement/InsertStatement.hpp"
+#include "../../AST/DeleteStatement/DeleteStatement.hpp"
 #include <vector>
 
 class Parser {
