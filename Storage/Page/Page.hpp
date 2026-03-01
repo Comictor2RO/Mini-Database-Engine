@@ -2,6 +2,7 @@
 #define PAGE_HPP
 
 #include "../PageHeader/PageHeader.hpp"
+#include <iostream>
 #include <string>
 #include <cstring>
 #include <vector>
@@ -10,7 +11,8 @@
 
 class Page {
     public:
-        //Constructor
+        //Constructors
+        Page();
         Page(int pageId);
 
         //Methods

@@ -3,7 +3,6 @@
 PageManager::PageManager(std::string filename)
 {
     this->filename = filename;
-    //Opens a binary file with the permission to read and to write
     file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
 
     if (!file.is_open())
@@ -15,16 +14,12 @@ PageManager::PageManager(std::string filename)
     }
     else
     {
-        std::cout << "File already exists" << '\n';
-
-        //seekg - moves the reading cursor in a chosen position
-        file.seekg(0, std::ios::end); //0 bytes before the end
-        //tellg - returns a streampos and tells you where the reading cursor is
+        file.seekg(0, std::ios::end);
         numberOfPages = file.tellg() / PAGE_SIZE;
     }
 }
 
-bool PageManager::insertRow(const std:: string &row)
+bool PageManager::insertRow(const std::string &row)
 {
     if (numberOfPages > 0) //If there are pages
     {
@@ -44,16 +39,29 @@ bool PageManager::insertRow(const std:: string &row)
     return true;
 }
 
+void PageManager::clearAll()
+{
+    file.close();
+    file.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+    file.close();
+    file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
+    numberOfPages = 0;
+}
+
 Page PageManager::readPage(int pageNumber)
 {
-    Page page(pageNumber);
+    Page page;
+    file.clear();
     file.seekg(pageNumber * PAGE_SIZE); //Changes the current position where to read
     file.read(page.getBuffer(), PAGE_SIZE);
+
     return page;
 }
 
 void PageManager::writePage(int pageId, const Page &page)
 {
+    file.clear();
+
     int position = pageId * PAGE_SIZE;
 
     file.seekp(position); //Changes the current position where to write

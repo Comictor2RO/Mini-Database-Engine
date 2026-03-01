@@ -9,4 +9,6 @@ struct Condition{
     std::string op;
 };
 
+
+
 #endif

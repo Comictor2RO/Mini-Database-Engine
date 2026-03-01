@@ -1,0 +1,225 @@
+================================================================
+DOCUMENTATIE TEHNICA — Mini Database Engine
+================================================================
+
+----------------------------------------------------------------
+AST/ — Abstract Syntax Tree
+----------------------------------------------------------------
+Contine reprezentarea in memorie a query-urilor SQL parsate.
+
+Statement
+    Clasa de baza abstracta pentru toate statement-urile.
+    Defineste interfata execute().
+
+SelectStatement
+    Reprezinta un query SELECT.
+    Contine coloanele selectate, tabela si conditia optionala WHERE.
+
+InsertStatement
+    Reprezinta un query INSERT.
+    Contine tabela, coloanele optionale si valorile de inserat.
+
+DeleteStatement
+    Reprezinta un query DELETE.
+    Contine tabela si conditia optionala WHERE.
+
+CreateStatement
+    Reprezinta un query CREATE TABLE.
+    Contine tabela si lista de coloane cu tipurile lor.
+
+Condition
+    Struct care reprezinta o conditie WHERE.
+    Contine coloana, operatorul si valoarea.
+    Exemplu: age > 18 -> { column="age", op=">", value="18" }
+
+Columns
+    Struct care reprezinta o coloana dintr-o tabela.
+    Contine numele si tipul coloanei.
+    Exemplu: { name="age", type="INT" }
+
+Row
+    Struct care reprezinta un rand de date ca vector de string-uri.
+    Exemplu: { values=["Ana", "25", "ana@email.com"] }
+
+----------------------------------------------------------------
+Frontend/ — Interfata cu utilizatorul
+----------------------------------------------------------------
+Transforma string-ul SQL intr-un obiect AST.
+
+TokenType
+    Enum cu tipurile de token-uri:
+    KEYWORD, IDENTIFIER, NUMBER, STRING,
+    OPERATOR, PUNCTUATION, WILDCARD, END_OF_FILE
+
+Token
+    Struct cu tipul si valoarea unui token.
+    Exemplu: { type=KEYWORD, value="SELECT" }
+
+Lexer
+    Primeste un string SQL si il sparge in vector<Token>.
+    Trateaza:
+    - keywords    : SELECT, INSERT, DELETE, CREATE, FROM, WHERE, INTO, VALUES
+    - identifiers : numele tabelelor si coloanelor
+    - numbers     : 18, 42, 100
+    - strings     : 'Ana', 'email@test.com'
+    - operators   : =, !=, >, <, >=, <=
+    - punctuation : ( ) ,
+    - wildcard    : *
+
+Parser
+    Primeste vector<Token> si construieste obiectul AST corespunzator.
+    Metoda principala: parse() -> Statement*
+    Metode interne:
+    - parseSelect()    -> SelectStatement*
+    - parseInsert()    -> InsertStatement*
+    - parseDelete()    -> DeleteStatement*
+    - parseCreate()    -> CreateStatement*
+    - parseCondition() -> Condition*
+    Validare: returneaza nullptr daca primul token nu e KEYWORD.
+
+----------------------------------------------------------------
+Storage/ — Stocarea datelor pe disc
+----------------------------------------------------------------
+Gestioneaza citirea si scrierea datelor in fisiere binare.
+
+PageHeader
+    Struct de 12 bytes stocat la inceputul fiecarei pagini.
+    Campuri:
+    - pageId    (int) : numarul paginii
+    - freeSpace (int) : spatiul liber ramas in bytes
+    - rowNumber (int) : numarul de randuri stocate
+    Verificat la compilare: static_assert(sizeof(PageHeader) == 12)
+
+Page
+    Reprezinta o pagina de 4096 bytes in memorie.
+    Structura interna:
+    [ PageHeader (12 bytes) | date randuri... | spatiu liber ]
+    Randurile sunt separate prin '\n'.
+    Metode:
+    - addRow(row)    : scrie randul in data[] si actualizeaza headerul
+    - getRows()      : citeste data[] si returneaza randurile ca vector<string>
+    - hasSpace(size) : verifica daca mai e loc pentru un rand
+    - getBuffer()    : returneaza const char* catre data[] pentru I/O disc
+
+PageManager
+    Gestioneaza fisierul .db.
+    La constructie:
+    - daca fisierul nu exista -> il creeaza
+    - daca exista -> calculeaza numberOfPages = fileSize / PAGE_SIZE
+    Operatii:
+    - insertRow(row)    : gaseste pagina cu spatiu liber sau creeaza una noua
+    - getAllRows()      : citeste toate paginile si returneaza toate randurile
+    - writePage(id, p)  : scrie pagina la pozitia id * PAGE_SIZE in fisier
+    - readPage(id)      : citeste pagina de la pozitia id * PAGE_SIZE din fisier
+    Toate operatiile folosesc modul binar (std::ios::binary).
+
+----------------------------------------------------------------
+Catalog/ — Schema bazei de date
+----------------------------------------------------------------
+Tine evidenta tabelelor si coloanelor lor in memorie.
+
+Catalog
+    Stocheaza un map<string, vector<Columns>>.
+    Asociaza numele fiecarei tabele cu lista ei de coloane.
+    Metode:
+    - createTable(name, columns) : creeaza tabela daca nu exista deja
+    - tableExists(name)          : verifica daca tabela exista
+    - getColumns(name)           : returneaza coloanele tabelei
+
+----------------------------------------------------------------
+Table/ — Operatii pe o tabela
+----------------------------------------------------------------
+Leaga schema (Catalog) de storage (PageManager).
+
+Table
+    Combina PageManager si schema tabelei.
+    Serializare: Row{"Ana","25"} -> "Ana|25" (stocat in pagina)
+    Deserializare: "Ana|25" -> Row{"Ana","25"} (la citire)
+    Metode:
+    - insertRow(row)      : serialzeaza randul si il trimite la PageManager
+    - selectRow(cond)     : citeste toate randurile, filtreaza dupa conditie
+    - deleteRow(cond)     : citeste tot, pastreaza ce nu se potriveste,
+                            sterge fisierul, rescrie randurile ramase
+    Evaluare conditie (evaluateCondition):
+    - gaseste indexul coloanei in schema
+    - compara valoarea randului cu valoarea conditiei
+    - suporta: =, !=, >, <, >=, <=
+
+----------------------------------------------------------------
+StringUtils/ — Utilitati
+----------------------------------------------------------------
+
+split(str, delimiter)
+    Sparge un string dupa un delimiter si returneaza vector<string>.
+    Folosita in Table pentru a deserializa randurile stocate.
+    Exemplu: split("Ana|25|email", '|') -> {"Ana", "25", "email"}
+
+----------------------------------------------------------------
+FLUXUL COMPLET AL UNUI QUERY
+----------------------------------------------------------------
+
+Exemplu: "INSERT INTO users VALUES ('Ana', 25)"
+
+  STRING SQL
+      |
+      v
+  [ LEXER ]
+      |
+      v
+  [INSERT][INTO][users][VALUES][(][Ana][,][25][)]
+      |
+      v
+  [ PARSER ]
+      |
+      v
+  InsertStatement { table="users", values=["Ana","25"] }
+      |
+      v
+  [ EXECUTION ENGINE ]  <- de implementat
+      |
+      v
+  Table("users").insertRow(Row{["Ana","25"]})
+      |
+      v
+  [ TABLE ]
+  serializeaza: "Ana|25"
+      |
+      v
+  PageManager.insertRow("Ana|25")
+      |
+      v
+  [ PAGE MANAGER ]
+  gaseste pagina cu spatiu liber
+      |
+      v
+  Page.addRow("Ana|25")
+      |
+      v
+  writePage() -> database.db (fisier binar)
+
+----------------------------------------------------------------
+STATUS IMPLEMENTARE
+----------------------------------------------------------------
+
+[DONE]
+  - AST complet (Statement, Select, Insert, Delete, Create,
+                 Condition, Columns, Row)
+  - Lexer (tokenizare completa)
+  - Parser (SELECT, INSERT, DELETE, CREATE, Condition)
+  - Storage (PageHeader, Page, PageManager)
+  - Catalog
+  - Table (insert, select, delete cu evaluare conditii)
+  - StringUtils
+
+[TODO]
+  - Execution Engine (leaga Parser cu Table/Catalog)
+  - B+ Tree Index
+  - Page Cache (LRU)
+  - Write-Ahead Logging (WAL)
+  - Raylib GUI
+
+[EXTENSII HARD MODE]
+  - Query planner + cost estimation
+  - Concurenta (MVCC simplificat)
+
+================================================================

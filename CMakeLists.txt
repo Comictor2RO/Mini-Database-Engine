@@ -35,4 +35,10 @@ add_executable(Mini_Database_Engine
         AST/CreateStatement/CreateStatement.hpp
         AST/Columns/Columns.hpp
         Catalog/Catalog.cpp
-        Catalog/Catalog.hpp)
+        Catalog/Catalog.hpp
+        Table/Table.cpp
+        Table/Table.hpp
+        AST/Row/Row.hpp
+        StringUtils/StringUtils.hpp
+        Engine/Engine.cpp
+        Engine/Engine.hpp)

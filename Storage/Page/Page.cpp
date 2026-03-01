@@ -1,5 +1,10 @@
 #include "Page.hpp"
 
+Page::Page()
+{
+    memset(data, 0, PAGE_SIZE);
+}
+
 Page::Page(int pageId)
 {
     PageHeader *header = (PageHeader *)data;
@@ -72,7 +77,8 @@ bool Page::addRow(const std::string &row)
     if (!hasSpace(row.length() + 1)) //If there is no space returns false
         return false;
 
-    int offset = PAGE_SIZE - header->freeSpace;
+    int bytesUsed = PAGE_SIZE - header->freeSpace - sizeof(PageHeader);
+    int offset = sizeof(PageHeader) + bytesUsed;
 
     memcpy(data + offset, row.c_str(), row.length()); //Saves the row
     data[offset + row.length()] = '\n'; //Adds the newline at the end

@@ -15,6 +15,7 @@ class PageManager {
 
         //Method
         bool insertRow(const std::string &row);
+        void clearAll();
 
         //Getter
         std::vector<std::string> getAllRows();
