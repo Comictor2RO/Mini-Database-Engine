@@ -1,61 +1,31 @@
-#include "Table/Table.hpp"
+#include "../Parser/Parser.hpp"
+#include "Engine/Engine.hpp"
+#include "Catalog/Catalog.hpp"
 
 int main()
 {
-    // 1. Definesti schema
-    std::vector<Columns> schema = {
-        {"id",   "INT"},
-        {"name", "STRING"},
-        {"age",  "INT"}
+    Catalog catalog;
+    Engine engine(catalog);
+
+    std::vector<std::string> queries = {
+        "CREATE TABLE users (id INT, name STRING, age INT)",
+        "INSERT INTO users VALUES (1, Ion, 25)",
+        "INSERT INTO users VALUES (2, Ana, 30)",
+        "INSERT INTO users VALUES (3, Popa, 40)",
+        "SELECT * FROM users",
+        "SELECT * FROM users WHERE id = 2",
+        "DELETE FROM users WHERE id = 2",
+        "SELECT * FROM users"
     };
 
-    // 2. Creezi tabela
-    Table table("users", schema);
-
-    // 3. INSERT
-    Row r1; r1.values = {"1", "Ion",  "25"};
-    Row r2; r2.values = {"2", "Ana",  "30"};
-    Row r3; r3.values = {"3", "Popa", "40"};
-    table.insertRow(r1);
-    table.insertRow(r2);
-    table.insertRow(r3);
-    std::cout << "INSERT OK\n";
-
-    // 4. SELECT * (fara conditie)
-    std::vector<Row> rows = table.selectRow(nullptr);
-    std::cout << "SELECT * -> " << rows.size() << " rows:\n";
-    for (const auto &row : rows)
+    for (const auto &query : queries)
     {
-        for (const auto &val : row.values)
-            std::cout << val << " | ";
-        std::cout << "\n";
-    }
-
-    // 5. SELECT WHERE id = 2
-    Condition cond;
-    cond.column = "id";
-    cond.op     = "=";
-    cond.value  = "2";
-    std::vector<Row> filtered = table.selectRow(&cond);
-    std::cout << "SELECT WHERE id=2 -> " << filtered.size() << " rows:\n";
-    for (const auto &row : filtered)
-    {
-        for (const auto &val : row.values)
-            std::cout << val << " | ";
-        std::cout << "\n";
-    }
-
-    // 6. DELETE WHERE id = 2
-    table.deleteRow(&cond);
-    std::cout << "DELETE WHERE id=2 OK\n";
-
-    // 7. SELECT * dupa delete
-    rows = table.selectRow(nullptr);
-    std::cout << "SELECT * dupa delete -> " << rows.size() << " rows:\n";
-    for (const auto &row : rows)
-    {
-        for (const auto &val : row.values)
-            std::cout << val << " | ";
+        std::cout << "> " << query << "\n";
+        Lexer lexer(query);
+        Parser parser(lexer.tokenize());
+        Statement *stmt = parser.parse();
+        engine.execute(stmt);
+        delete stmt;
         std::cout << "\n";
     }
 

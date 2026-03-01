@@ -27,7 +27,7 @@ static bool evaluateCondition(const Condition *cond, const Row &row, const std::
 }
 
 Table::Table(const std::string &name, const std::vector<Columns> &schema)
-    : name(name), scheme(schema), pageManager(name)
+    : name(name), scheme(schema), pageManager(name + ".db")
 {}
 
 void Table::insertRow(const Row &row)

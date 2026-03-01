@@ -29,12 +29,12 @@ CreateStatement
 
 Condition
     Struct care reprezinta o conditie WHERE.
-    Contine coloana, operatorul si valoarea.
+    Campuri: column, op, value.
     Exemplu: age > 18 -> { column="age", op=">", value="18" }
 
 Columns
     Struct care reprezinta o coloana dintr-o tabela.
-    Contine numele si tipul coloanei.
+    Campuri: name, type.
     Exemplu: { name="age", type="INT" }
 
 Row
@@ -107,10 +107,11 @@ PageManager
     - daca fisierul nu exista -> il creeaza
     - daca exista -> calculeaza numberOfPages = fileSize / PAGE_SIZE
     Operatii:
-    - insertRow(row)    : gaseste pagina cu spatiu liber sau creeaza una noua
-    - getAllRows()      : citeste toate paginile si returneaza toate randurile
-    - writePage(id, p)  : scrie pagina la pozitia id * PAGE_SIZE in fisier
-    - readPage(id)      : citeste pagina de la pozitia id * PAGE_SIZE din fisier
+    - insertRow(row)   : gaseste pagina cu spatiu liber sau creeaza una noua
+    - getAllRows()     : citeste toate paginile si returneaza toate randurile
+    - writePage(id, p) : scrie pagina la pozitia id * PAGE_SIZE in fisier
+    - readPage(id)     : citeste pagina de la pozitia id * PAGE_SIZE
+    - clearAll()       : sterge continutul fisierului (folosit in deleteRow)
     Toate operatiile folosesc modul binar (std::ios::binary).
 
 ----------------------------------------------------------------
@@ -136,14 +137,34 @@ Table
     Serializare: Row{"Ana","25"} -> "Ana|25" (stocat in pagina)
     Deserializare: "Ana|25" -> Row{"Ana","25"} (la citire)
     Metode:
-    - insertRow(row)      : serialzeaza randul si il trimite la PageManager
-    - selectRow(cond)     : citeste toate randurile, filtreaza dupa conditie
-    - deleteRow(cond)     : citeste tot, pastreaza ce nu se potriveste,
-                            sterge fisierul, rescrie randurile ramase
+    - insertRow(row)  : serialzeaza randul si il trimite la PageManager
+    - selectRow(cond) : citeste toate randurile, filtreaza dupa conditie
+                        daca cond == nullptr -> returneaza toate randurile
+    - deleteRow(cond) : citeste tot, pastreaza randurile care NU se
+                        potrivesc, sterge fisierul, rescrie randurile ramase
     Evaluare conditie (evaluateCondition):
     - gaseste indexul coloanei in schema
     - compara valoarea randului cu valoarea conditiei
     - suporta: =, !=, >, <, >=, <=
+
+----------------------------------------------------------------
+Engine/ — Execution Engine
+----------------------------------------------------------------
+Leaga Parser-ul de Table si Catalog. Componenta centrala a engine-ului.
+
+Engine
+    Primeste un Catalog prin referinta la constructie.
+    Metoda principala: execute(Statement*)
+    - foloseste dynamic_cast pentru a determina tipul statement-ului
+    - apeleaza metoda corespunzatoare
+    Metode interne:
+    - executeCreate(stmt) : apeleaza catalog.createTable()
+    - executeInsert(stmt) : ia schema din catalog, creeaza Table,
+                            construieste Row din values si apeleaza insertRow()
+    - executeSelect(stmt) : ia schema din catalog, creeaza Table,
+                            apeleaza selectRow() si afiseaza rezultatele
+    - executeDelete(stmt) : ia schema din catalog, creeaza Table,
+                            apeleaza deleteRow()
 
 ----------------------------------------------------------------
 StringUtils/ — Utilitati
@@ -158,44 +179,70 @@ split(str, delimiter)
 FLUXUL COMPLET AL UNUI QUERY
 ----------------------------------------------------------------
 
-Exemplu: "INSERT INTO users VALUES ('Ana', 25)"
+Exemplu: "INSERT INTO users VALUES (1, Ion, 25)"
 
   STRING SQL
       |
       v
   [ LEXER ]
+  Tokenizeaza string-ul
       |
       v
-  [INSERT][INTO][users][VALUES][(][Ana][,][25][)]
+  [INSERT][INTO][users][VALUES][(][1][,][Ion][,][25][)]
       |
       v
   [ PARSER ]
+  Construieste obiectul AST
       |
       v
-  InsertStatement { table="users", values=["Ana","25"] }
+  InsertStatement { table="users", values=["1","Ion","25"] }
       |
       v
-  [ EXECUTION ENGINE ]  <- de implementat
-      |
-      v
-  Table("users").insertRow(Row{["Ana","25"]})
+  [ ENGINE ]
+  executeInsert():
+  - catalog.getColumns("users") -> schema
+  - Table table("users", schema)
+  - row.values = ["1", "Ion", "25"]
+  - table.insertRow(row)
       |
       v
   [ TABLE ]
-  serializeaza: "Ana|25"
-      |
-      v
-  PageManager.insertRow("Ana|25")
+  Serialzeaza: "1|Ion|25"
+  pageManager.insertRow("1|Ion|25")
       |
       v
   [ PAGE MANAGER ]
-  gaseste pagina cu spatiu liber
-      |
-      v
-  Page.addRow("Ana|25")
-      |
-      v
-  writePage() -> database.db (fisier binar)
+  Gaseste pagina cu spatiu liber
+  page.addRow("1|Ion|25")
+  writePage() -> users.db (fisier binar)
+
+----------------------------------------------------------------
+EXEMPLU DE UTILIZARE (main.cpp)
+----------------------------------------------------------------
+
+  Catalog catalog;
+  Engine engine(catalog);
+
+  Queries rulate in ordine:
+  1. CREATE TABLE users (id INT, name STRING, age INT)
+     -> catalog retine schema tabelei
+
+  2. INSERT INTO users VALUES (1, Ion, 25)
+  3. INSERT INTO users VALUES (2, Ana, 30)
+  4. INSERT INTO users VALUES (3, Popa, 40)
+     -> randurile sunt scrise in users.db
+
+  5. SELECT * FROM users
+     -> afiseaza toate randurile
+
+  6. SELECT * FROM users WHERE id = 2
+     -> afiseaza doar randul cu id=2
+
+  7. DELETE FROM users WHERE id = 2
+     -> sterge randul cu id=2
+
+  8. SELECT * FROM users
+     -> afiseaza randurile ramase (1 si 3)
 
 ----------------------------------------------------------------
 STATUS IMPLEMENTARE
@@ -209,14 +256,13 @@ STATUS IMPLEMENTARE
   - Storage (PageHeader, Page, PageManager)
   - Catalog
   - Table (insert, select, delete cu evaluare conditii)
+  - Engine (execution engine end-to-end)
   - StringUtils
 
 [TODO]
-  - Execution Engine (leaga Parser cu Table/Catalog)
   - B+ Tree Index
   - Page Cache (LRU)
   - Write-Ahead Logging (WAL)
-  - Raylib GUI
 
 [EXTENSII HARD MODE]
   - Query planner + cost estimation
