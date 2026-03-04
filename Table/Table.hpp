@@ -5,6 +5,7 @@
 #include "../Storage/PageManager/PageManager.hpp"
 #include "../AST/Columns/Columns.hpp"
 #include "../AST/Row/Row.hpp"
+#include "../Indexing/BPlusTree/BPlusTree.hpp"
 #include "../StringUtils/StringUtils.hpp"
 
 class Table {
@@ -19,6 +20,10 @@ class Table {
         std::string name;
         std::vector<Columns> scheme;
         PageManager pageManager;
+        BPlusTree index;
+        int nextKey = 0;
+
+        void rebuildIndex();
 };
 
 static bool evaluateCondition(const Condition *cond, const Row &row, const std::vector<Columns> &schema);

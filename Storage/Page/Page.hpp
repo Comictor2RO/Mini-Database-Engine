@@ -23,6 +23,7 @@ class Page {
         std::vector<std::string> getRows() const;
         int getPageId() const;
         int getFreeSpace() const;
+        int getRowCount() const;
         char *getBuffer();
         const char *getBuffer() const;
 

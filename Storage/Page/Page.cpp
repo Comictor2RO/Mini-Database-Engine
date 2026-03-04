@@ -54,6 +54,12 @@ int Page::getFreeSpace() const
     return header->freeSpace;
 }
 
+int Page::getRowCount() const
+{
+    const PageHeader *header = (const PageHeader *)data;
+    return header->rowNumber;
+}
+
 char *Page::getBuffer()
 {
     return data;

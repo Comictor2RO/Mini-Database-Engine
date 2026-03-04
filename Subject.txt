@@ -23,7 +23,7 @@ PROGRES
         - Condition
         - Columns
     • Lexer
-        - TokenType, Token (fișiere separate)
+        - TokenType, Token (fisiere separate)
         - Tokenizare completa: keywords, identifiers,
           numbers, strings, operators, punctuation, wildcard
     • Parser
@@ -32,19 +32,25 @@ PROGRES
         - validare query invalid
     • Storage
         - PageHeader
-        - Page (addRow, getRows, hasSpace)
+        - Page (addRow, getRows, hasSpace, getRowCount)
         - PageManager (readPage, writePage, insertRow, getAllRows)
     • Catalog
         - createTable, tableExists, getColumns
     • Table
-        - leagă Catalog + PageManager
+        - leaga Catalog + PageManager
         - API simplu pentru operatii pe tabele (insert/select/delete)
     • Engine
-        - execută Statements peste Table/PageManager
-        - leagă parser-ul de storage (end‑to‑end DB functional)
+        - executa Statements peste Table/PageManager
+        - leaga parser-ul de storage (end-to-end DB functional)
+    • B+ Tree Index
+        - IndexRecord (key, pageId, offset)
+        - BPlusNode (isLeaf, keys, children, records, next, parent)
+        - BPlusTree (insert, search, clear, splitLeaf, splitInternal)
+        - integrat in Table: cautare O(log n) pe prima coloana INT
+        - rebuild automat al indexului la crearea obiectului Table
+        - reset + rebuild la DELETE
 
 [✗] LIPSESTE:
-    • B+ Tree Index
     • Page Cache (LRU)
     • Write-Ahead Logging (WAL)
     • RayLib GUI
@@ -53,8 +59,8 @@ PROGRES
 ROADMAP
 ============================================================
 
-  Saptamana 1:  Table + Engine       -> DB functional end-to-end
-  Saptamana 2:  B+ Tree Index        -> cautare rapida
+  Saptamana 1:  Table + Engine       -> DB functional end-to-end  [DONE]
+  Saptamana 2:  B+ Tree Index        -> cautare rapida             [DONE]
   Saptamana 3:  Page Cache LRU       -> optimizare I/O
   Saptamana 4:  WAL                  -> durabilitate
   Final:        RayLib GUI           -> interfata grafica

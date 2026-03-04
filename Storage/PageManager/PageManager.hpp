@@ -22,6 +22,7 @@ class PageManager {
 
         //Destructor
         ~PageManager();
+        
     private:
         std::string filename;
         std::fstream file;
