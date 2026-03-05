@@ -61,4 +61,6 @@ add_executable(Mini_Database_Engine
         GUI/GUI.cpp
 )
 
+# Legare statică a runtime C++/GCC - .exe nu mai are nevoie de libstdc++-6.dll / libgcc_s
+target_link_options(Mini_Database_Engine PRIVATE -static-libgcc -static-libstdc++)
 target_link_libraries(Mini_Database_Engine PRIVATE raylib opengl32 gdi32 winmm)

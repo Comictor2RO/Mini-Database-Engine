@@ -8,6 +8,8 @@
 
 class Catalog {
     public:
+        Catalog();
+
         //Methods
         void createTable(const std::string &name, const std::vector<Columns> &columns);
         bool tableExists(const std::string &name) const;
@@ -17,6 +19,10 @@ class Catalog {
 
     private:
         std::map<std::string, std::vector<Columns>> columns;
+        static const char* CATALOG_FILE;
+
+        void load();
+        void save();
 };
 
 
