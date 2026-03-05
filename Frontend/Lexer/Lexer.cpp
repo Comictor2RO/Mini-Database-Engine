@@ -19,7 +19,7 @@ Token Lexer::readWord()
 {
     std::string word;
 
-    while(position < input.length() && isalnum(input[position]))
+    while(position < input.length() && (isalnum(input[position]) || input[position] == '_'))
     {
         word += input[position];
         position++;

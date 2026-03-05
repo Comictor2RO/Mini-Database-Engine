@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(Mini_Database_Engine)
 
 set(CMAKE_CXX_STANDARD 17)
+# Executabilul in bin/ - uneori Windows nu blocheaza cai noi
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # RayLib instalat local
 set(RAYLIB_DIR "C:/raylib/raylib/src")
@@ -55,6 +57,8 @@ add_executable(Mini_Database_Engine
         Storage/LRUCache/LRUCache.cpp
         WALManager/WALManager.hpp
         WALManager/WALManager.cpp
+        GUI/GUI.hpp
+        GUI/GUI.cpp
 )
 
 target_link_libraries(Mini_Database_Engine PRIVATE raylib opengl32 gdi32 winmm)

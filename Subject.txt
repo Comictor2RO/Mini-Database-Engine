@@ -64,79 +64,29 @@ PROGRES
         - integrat in Engine: logInsert inainte de INSERT, commit dupa
         - recover() apelat automat in constructorul Engine la pornire
         - testat: date recuperate corect dupa crash simulat
-
-[✗] LIPSESTE:
     • RayLib GUI
+        - fereastra 1280x720, 3 panouri: input, results, log
+        - input cu cursor (sageti stanga/dreapta), Backspace cu repeat la hold
+        - buton RUN + Enter pentru executie query
+        - tema dark/light (buton in log panel)
+        - erori afisate in log, rezultate SELECT in grid
 
 ============================================================
-ROADMAP
-============================================================
-
-  Saptamana 1:  Table + Engine       -> DB functional end-to-end  [DONE]
-  Saptamana 2:  B+ Tree Index        -> cautare rapida             [DONE]
-  Saptamana 3:  Page Cache LRU       -> optimizare I/O              [DONE]
-  Saptamana 4:  WAL                  -> durabilitate               [DONE]
-  Final:        RayLib GUI           -> interfata grafica
-
-============================================================
-ARHITECTURA
-============================================================
-
-1. SQL Parser
-   Primeste un string gen SELECT * FROM users WHERE id = 5
-   si il transforma intr-un AST pe care engine-ul il executa.
-
-2. Page-Based Storage
-   Fisierul mydb.db este impartit in pagini de 4KB.
-   Randurile sunt ambalate in pagini — imita comportamentul
-   real al HDD/SSD (citesti/scrii blocuri, nu octeti).
-
-3. B+ Tree Index
-   Structura arborescenta pentru cautare rapida dupa cheie
-   primara. Fara index: scan complet. Cu B+ Tree: O(log n).
-
-4. Page Cache (Buffer Pool)
-   Tine in RAM paginile recent accesate (politica LRU).
-   Cache hit -> RAM. Cache miss -> disc + adauga in cache.
-
-5. Write-Ahead Log (WAL)
-   Orice modificare e scrisa intai in log, apoi pe disc.
-   La crash -> recovery din log. Fundamentul durabilitatii.
-
-============================================================
-RAYLIB GUI
-============================================================
-
-  Layout:
-  ┌──────────────────────────────────────────────────┐
-  │                Mini DB Engine                    │
-  ├──────────────────────────────────────────────────┤
-  │  ┌────────────────────────────────┐  ┌───────┐  │
-  │  │ SELECT * FROM users            │  │  RUN  │  │
-  │  └────────────────────────────────┘  └───────┘  │
-  ├──────────────────────────────────────────────────┤
-  │   id  │  name  │  age                            │
-  │  ─────┼────────┼──────                           │
-  │   1   │  Ion   │  25    <- citit din mydb.db     │
-  │   2   │  Ana   │  30                             │
-  ├──────────────────────────────────────────────────┤
-  │  [LOG] ✅ Query executed in 0.002ms – 2 rows     │
-  │  [LOG] ❌ ERROR: Table 'x' does not exist        │
-  └──────────────────────────────────────────────────┘
-
-  Componente:
-    • SQL Input field   - text editabil, Enter sau buton RUN
-    • Buton RUN         - executa query-ul curent
-    • Results table     - grid dinamic bazat pe schema tabelei
-                          date citite LIVE din mydb.db
-    • Log panel         - timestamp + mesaje
-                          verde = succes | rosu = eroare
-
-  Flow:
-    SQL Input -> Parser -> Engine -> PageManager
-                                         |
-                                    mydb.db (disc)
-                                         |
-                               rows deserializate -> UI
-
-============================================================
+NEXT TO DO
+============================================================Completare limbaj SQL
+UPDATE – UPDATE tabel SET col = val WHERE cond (AST, parser, Table::updateRow, integrare în Engine).
+DROP TABLE – ștergere tabelă + fișier .db și curățare din catalog (l-ai avut, l-ai scos; e util pentru curățenie).
+CREATE INDEX (opțional) – index pe o coloană aleasă, nu doar pe prima INT.
+Robustețe și validare
+Validare tipuri – la INSERT/UPDATE verificare că valorile respectă schema (INT numeric, VARCHAR ok); mesaje de eroare clare.
+Cheie primară / UNIQUE – în schema (Columns) flag primaryKey sau unique; respingere INSERT cu duplicate.
+GUI
+Font custom – LoadFontEx / DrawTextEx peste tot (îl menționaseși).
+Istoric query – săgeți sus/jos în input pentru comenzi anterioare.
+Highlight SQL – culori diferite pentru keywords, stringuri, numere în zona de input.
+Date și operare
+Tranzacții – BEGIN / COMMIT / ROLLBACK; WAL deja există, tranzacțiile țin mai multe operații în log până la commit.
+Paginație la rezultate – pentru SELECT cu multe rânduri (prev/next page în panoul de rezultate).
+Dezvoltare și CV
+Teste automate – un singur executable de teste (fără GUI) care rulează CREATE/INSERT/SELECT/DELETE (și UPDATE/DROP dacă le adaugi) și verifică rezultatele; util și pentru regresii.
+Export CSV – buton/shortcut în GUI: exportă rezultatele SELECT curent într-un .csv

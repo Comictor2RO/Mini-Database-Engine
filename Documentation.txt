@@ -1,271 +1,220 @@
 ================================================================
-DOCUMENTATIE TEHNICA — Mini Database Engine
+DOCUMENTATIE — Mini Database Engine
+Ce face fiecare clasa si metodele ei
 ================================================================
 
 ----------------------------------------------------------------
 AST/ — Abstract Syntax Tree
 ----------------------------------------------------------------
-Contine reprezentarea in memorie a query-urilor SQL parsate.
 
-Statement
-    Clasa de baza abstracta pentru toate statement-urile.
-    Defineste interfata execute().
+Statement (clasa de baza abstracta)
+    Rol: Interfata comuna pentru toate tipurile de comenzi SQL.
+    Metode:
+        execute() — virtual pure; fiecare tip de statement o implementeaza.
 
 SelectStatement
-    Reprezinta un query SELECT.
-    Contine coloanele selectate, tabela si conditia optionala WHERE.
+    Rol: Reprezinta comanda SELECT (coloane, tabela, conditie WHERE optionala).
+    Metode:
+        getTable(), getColumns(), getCondition() — return valorile stocate.
+        setTable(), setColumns(), setCondition() — seteri.
+        execute() — override; logica reala e in Engine.
 
 InsertStatement
-    Reprezinta un query INSERT.
-    Contine tabela, coloanele optionale si valorile de inserat.
+    Rol: Reprezinta comanda INSERT (tabela, coloane optionale, valori).
+    Metode:
+        getTable(), getValues(), getColumns() — geteri.
+        setTable(), setValues(), setColumns() — seteri.
+        execute() — override.
 
 DeleteStatement
-    Reprezinta un query DELETE.
-    Contine tabela si conditia optionala WHERE.
+    Rol: Reprezinta comanda DELETE (tabela, conditie WHERE optionala).
+    Metode:
+        getTable(), getCondition() — geteri.
+        setTable(), setCondition() — seteri.
+        execute() — override.
 
 CreateStatement
-    Reprezinta un query CREATE TABLE.
-    Contine tabela si lista de coloane cu tipurile lor.
+    Rol: Reprezinta comanda CREATE TABLE (nume tabela, lista coloane cu tipuri).
+    Metode:
+        getTable(), getColumns() — geteri.
+        setTable(), setColumns() — seteri.
+        execute() — override.
 
-Condition
-    Struct care reprezinta o conditie WHERE.
+Condition (struct)
+    Rol: O conditie WHERE: coloana, operator, valoare.
     Campuri: column, op, value.
-    Exemplu: age > 18 -> { column="age", op=">", value="18" }
 
-Columns
-    Struct care reprezinta o coloana dintr-o tabela.
+Columns (struct)
+    Rol: O coloana din schema: nume si tip.
     Campuri: name, type.
-    Exemplu: { name="age", type="INT" }
 
-Row
-    Struct care reprezinta un rand de date ca vector de string-uri.
-    Exemplu: { values=["Ana", "25", "ana@email.com"] }
+Row (struct)
+    Rol: Un rand de date ca lista de string-uri (valorile pe coloane).
+    Campuri: values (vector<string>).
 
 ----------------------------------------------------------------
-Frontend/ — Interfata cu utilizatorul
+Frontend/ — Lexer si Parser
 ----------------------------------------------------------------
-Transforma string-ul SQL intr-un obiect AST.
 
-TokenType
-    Enum cu tipurile de token-uri:
-    KEYWORD, IDENTIFIER, NUMBER, STRING,
-    OPERATOR, PUNCTUATION, WILDCARD, END_OF_FILE
+TokenType (enum)
+    Rol: Tipurile de token-uri emise de Lexer.
+    Valori: KEYWORD, IDENTIFIER, NUMBER, STRING, OPERATOR, PUNCTUATION, WILDCARD, END_OF_FILE.
 
-Token
-    Struct cu tipul si valoarea unui token.
-    Exemplu: { type=KEYWORD, value="SELECT" }
+Token (struct)
+    Rol: Un token (tip + valoare string).
+    Campuri: type, value.
 
 Lexer
-    Primeste un string SQL si il sparge in vector<Token>.
-    Trateaza:
-    - keywords    : SELECT, INSERT, DELETE, CREATE, FROM, WHERE, INTO, VALUES
-    - identifiers : numele tabelelor si coloanelor
-    - numbers     : 18, 42, 100
-    - strings     : 'Ana', 'email@test.com'
-    - operators   : =, !=, >, <, >=, <=
-    - punctuation : ( ) ,
-    - wildcard    : *
+    Rol: Transforma un string SQL intr-un vector de Token-uri.
+    Metode:
+        Lexer(input) — constructor.
+        tokenize() — parcurge string-ul, apeleaza readWord/readNumber/readString/etc., returneaza vector<Token>.
 
 Parser
-    Primeste vector<Token> si construieste obiectul AST corespunzator.
-    Metoda principala: parse() -> Statement*
-    Metode interne:
-    - parseSelect()    -> SelectStatement*
-    - parseInsert()    -> InsertStatement*
-    - parseDelete()    -> DeleteStatement*
-    - parseCreate()    -> CreateStatement*
-    - parseCondition() -> Condition*
-    Validare: returneaza nullptr daca primul token nu e KEYWORD.
+    Rol: Transforma vector<Token> intr-un Statement* (AST).
+    Metode:
+        Parser(tokens) — constructor.
+        parse() — citeste primul keyword si apeleaza parseSelect/parseInsert/parseDelete/parseCreate; returneaza nullptr daca query invalid.
+    Metode private: parseSelect(), parseInsert(), parseDelete(), parseCreate(), parseCondition(), currentToken(), consumeToken().
 
 ----------------------------------------------------------------
-Storage/ — Stocarea datelor pe disc
+Storage/ — Pagini si cache
 ----------------------------------------------------------------
-Gestioneaza citirea si scrierea datelor in fisiere binare.
 
-PageHeader
-    Struct de 12 bytes stocat la inceputul fiecarei pagini.
-    Campuri:
-    - pageId    (int) : numarul paginii
-    - freeSpace (int) : spatiul liber ramas in bytes
-    - rowNumber (int) : numarul de randuri stocate
-    Verificat la compilare: static_assert(sizeof(PageHeader) == 12)
+PageHeader (struct)
+    Rol: Header fix 12 bytes la inceputul fiecarei pagini.
+    Campuri: pageId, freeSpace, rowNumber.
 
 Page
-    Reprezinta o pagina de 4096 bytes in memorie.
-    Structura interna:
-    [ PageHeader (12 bytes) | date randuri... | spatiu liber ]
-    Randurile sunt separate prin '\n'.
+    Rol: O pagina de 4KB in memorie; stocheaza header + randuri (separate prin \n).
     Metode:
-    - addRow(row)    : scrie randul in data[] si actualizeaza headerul
-    - getRows()      : citeste data[] si returneaza randurile ca vector<string>
-    - hasSpace(size) : verifica daca mai e loc pentru un rand
-    - getBuffer()    : returneaza const char* catre data[] pentru I/O disc
+        Page(), Page(pageId) — constructori.
+        addRow(row) — adauga un rand, actualizeaza header; returneaza false daca nu e loc.
+        getRows() — citeste din buffer si returneaza vector de string-uri (randurile).
+        hasSpace(rowSize) — verifica daca mai e loc.
+        getPageId(), getFreeSpace(), getRowCount() — geteri din header.
+        getBuffer() — returneaza char* la data[] pentru I/O.
 
 PageManager
-    Gestioneaza fisierul .db.
-    La constructie:
-    - daca fisierul nu exista -> il creeaza
-    - daca exista -> calculeaza numberOfPages = fileSize / PAGE_SIZE
-    Operatii:
-    - insertRow(row)   : gaseste pagina cu spatiu liber sau creeaza una noua
-    - getAllRows()     : citeste toate paginile si returneaza toate randurile
-    - writePage(id, p) : scrie pagina la pozitia id * PAGE_SIZE in fisier
-    - readPage(id)     : citeste pagina de la pozitia id * PAGE_SIZE
-    - clearAll()       : sterge continutul fisierului (folosit in deleteRow)
-    Toate operatiile folosesc modul binar (std::ios::binary).
+    Rol: Gestioneaza fisierul .db: citeste/scrie pagini, insereaza randuri, intoarce toate randurile.
+    Metode:
+        PageManager(filename) — deschide/creaza fisierul binar, calculeaza numberOfPages.
+        insertRow(row) — pune randul pe ultima pagina cu loc sau creeaza pagina noua; returneaza true/false.
+        getAllRows() — citeste toate paginile (prin cache) si concateneaza randurile.
+        clearAll() — goleste fisierul si cache-ul.
+    Private: readPage(pageId), writePage(pageId, page) — I/O pe disc; folosesc LRUCache.
+
+CacheEntry (struct)
+    Rol: Un slot din cache: pagina + flag isDirty.
+    Campuri: page, isDirty.
+
+LRUCache
+    Rol: Cache LRU pentru pagini: get/put O(1), evict la cea mai veche folosire.
+    Metode:
+        LRUCache(capacity, file) — constructor.
+        get(pageId) — returneaza pointer la pagina din cache sau nullptr; muta la cap (cel mai recent).
+        put(pageId, page, isDirty) — pune/actualizeaza pagina la cap; daca e plin apeleaza evict().
+        clear() — goleste lista si map-ul (fara scriere pe disc).
+        flushAll() — evict la toate paginile (scrie pe disc cele dirty).
+    Private: evict() — scoate ultima pagina; daca e dirty o scrie pe disc; o sterge din cache.
 
 ----------------------------------------------------------------
-Catalog/ — Schema bazei de date
+Catalog/
 ----------------------------------------------------------------
-Tine evidenta tabelelor si coloanelor lor in memorie.
 
 Catalog
-    Stocheaza un map<string, vector<Columns>>.
-    Asociaza numele fiecarei tabele cu lista ei de coloane.
+    Rol: Tine schema bazei: map nume_tabela -> lista de coloane (Columns).
     Metode:
-    - createTable(name, columns) : creeaza tabela daca nu exista deja
-    - tableExists(name)          : verifica daca tabela exista
-    - getColumns(name)           : returneaza coloanele tabelei
+        createTable(name, columns) — adauga tabela daca nu exista.
+        tableExists(name) — true/false.
+        getColumns(name) — returneaza vector<Columns>; gol daca tabela nu exista.
 
 ----------------------------------------------------------------
-Table/ — Operatii pe o tabela
+Table/
 ----------------------------------------------------------------
-Leaga schema (Catalog) de storage (PageManager).
 
 Table
-    Combina PageManager si schema tabelei.
-    Serializare: Row{"Ana","25"} -> "Ana|25" (stocat in pagina)
-    Deserializare: "Ana|25" -> Row{"Ana","25"} (la citire)
+    Rol: Leaga Catalog de PageManager; serializare/deserializare randuri; index B+ Tree pe prima coloana INT.
     Metode:
-    - insertRow(row)  : serialzeaza randul si il trimite la PageManager
-    - selectRow(cond) : citeste toate randurile, filtreaza dupa conditie
-                        daca cond == nullptr -> returneaza toate randurile
-    - deleteRow(cond) : citeste tot, pastreaza randurile care NU se
-                        potrivesc, sterge fisierul, rescrie randurile ramase
-    Evaluare conditie (evaluateCondition):
-    - gaseste indexul coloanei in schema
-    - compara valoarea randului cu valoarea conditiei
-    - suporta: =, !=, >, <, >=, <=
+        Table(name, scheme) — deschide name.db, rebuild index din date existente.
+        insertRow(row) — serializeaza row la "v1|v2|...", trimite la PageManager, actualizeaza index (key = prima coloana INT).
+        selectRow(cond) — daca cond e WHERE pe prima coloana INT cu =, foloseste index.search(); altfel full scan; filtreaza cu evaluateCondition.
+        deleteRow(cond) — citeste toate randurile, pastreaza cele care nu se potrivesc, clearAll(), index.clear(), rescrie randurile.
+    Private: rebuildIndex() — citeste toate randurile de pe disc si reumple B+ Tree.
+    Functie: evaluateCondition(cond, row, schema) — compara valoarea din row la coloana cond.column cu cond.value folosind cond.op.
 
 ----------------------------------------------------------------
-Engine/ — Execution Engine
+Indexing/ — B+ Tree
 ----------------------------------------------------------------
-Leaga Parser-ul de Table si Catalog. Componenta centrala a engine-ului.
+
+IndexRecord (struct)
+    Rol: O intrare din index: cheie + pozitie (pageId, offset = index global al randului).
+    Campuri: key, pageId, offset.
+
+BPlusNode (struct)
+    Rol: Un nod din B+ Tree (intern sau frunza).
+    Campuri: keys, children (pentru nod intern), records (pentru frunza), next (urmatoarea frunza), parent, isLeaf.
+
+BPlusTree
+    Rol: Index B+ Tree pentru cautare dupa cheie (O(log n)).
+    Metode:
+        BPlusTree(order) — constructor; order = nr max chei per nod.
+        insert(key, pageId, offset) — gaseste frunza, insereaza; la overflow apeleaza splitLeaf/splitInternal.
+        search(key) — returneaza IndexRecord* la cheia data sau nullptr.
+        clear() — elibereaza toate nodurile, root = nullptr.
+    Private: findLeaf(key), splitLeaf(), splitInternal(), deleteNode().
+
+----------------------------------------------------------------
+WALManager/
+----------------------------------------------------------------
+
+WALEntry (struct)
+    Rol: O intrare din log: tip operatie, tabela, date rand, flag committed.
+    Campuri: type, table, rowData, committed.
+
+WALManager
+    Rol: Write-Ahead Log: scrie operatii inainte de aplicarea pe .db; la pornire recover() reaplica necommitted.
+    Metode:
+        WALManager(filename) — deschide/creaza fisierul .wal (append).
+        logInsert(table, rowData) — scrie linie "INSERT|table|rowData|0" si flush.
+        commit() — citeste log-ul, marcheaza ultima intrare committed=1, rescrie fisierul.
+        recover(engine) — citeste log-ul, pentru fiecare intrare necommitted de tip INSERT executa query prin engine si commit.
+    Private: readLog() — citeste toate liniile din .wal si returneaza vector<WALEntry>.
+
+----------------------------------------------------------------
+Engine/
+----------------------------------------------------------------
 
 Engine
-    Primeste un Catalog prin referinta la constructie.
-    Metoda principala: execute(Statement*)
-    - foloseste dynamic_cast pentru a determina tipul statement-ului
-    - apeleaza metoda corespunzatoare
-    Metode interne:
-    - executeCreate(stmt) : apeleaza catalog.createTable()
-    - executeInsert(stmt) : ia schema din catalog, creeaza Table,
-                            construieste Row din values si apeleaza insertRow()
-    - executeSelect(stmt) : ia schema din catalog, creeaza Table,
-                            apeleaza selectRow() si afiseaza rezultatele
-    - executeDelete(stmt) : ia schema din catalog, creeaza Table,
-                            apeleaza deleteRow()
+    Rol: Punct central: primeste SQL (sau Statement*), executa pe Catalog + Table; pentru INSERT scrie in WAL inainte.
+    Metode:
+        Engine(catalog) — constructor; deschide engine.wal, apeleaza wal.recover(*this).
+        execute(statement) — dynamic_cast la tip; apeleaza executeCreate/executeInsert/executeDelete/executeSelect.
+        query(sql) — Lexer + Parser + parse(); daca e SELECT verifica tableExists, construieste Table, selectRow(), returneaza vector<Row>; altfel verifica tableExists pentru INSERT/DELETE, apeleaza execute(stmt); arunca daca query invalid sau tabela inexistenta.
+    Private: executeCreate(), executeInsert(), executeDelete(), executeSelect().
 
 ----------------------------------------------------------------
-StringUtils/ — Utilitati
+GUI/
+----------------------------------------------------------------
+
+GUI
+    Rol: Interfata RayLib: fereastra 1280x720, input SQL, grid rezultate, log; executie la Enter sau buton RUN.
+    Metode:
+        GUI(catalog, engine) — constructor; pastreaza referinte, cursorPos=0.
+        run() — InitWindow, loop: handleInput(), BeginDrawing(), drawInputPanel/drawResultsPanel/drawLogPanel(), EndDrawing(), CloseWindow().
+    Private:
+        handleInput() — GetCharPressed (insereaza la cursorPos), KEY_LEFT/KEY_RIGHT (miscare cursor), KEY_BACKSPACE (stergere + repeat la hold), KEY_ENTER (executeQuery).
+        executeQuery() — log "> input", engine.query(input), log "[OK]..." sau "[ERROR]...", results = ..., input.clear(), cursorPos=0.
+        drawInputPanel() — fundal, dreptunghi input, text input, cursor clipitor la cursorPos, buton RUN (hover + click = executeQuery).
+        drawResultsPanel() — header "RESULTS", randurile din results (alternand culori).
+        drawLogPanel() — header "LOG", buton DARK/LIGHT (toggle isDark), liniile din logs (verde/rosu pentru ERROR).
+
+----------------------------------------------------------------
+StringUtils/
 ----------------------------------------------------------------
 
 split(str, delimiter)
-    Sparge un string dupa un delimiter si returneaza vector<string>.
-    Folosita in Table pentru a deserializa randurile stocate.
-    Exemplu: split("Ana|25|email", '|') -> {"Ana", "25", "email"}
-
-----------------------------------------------------------------
-FLUXUL COMPLET AL UNUI QUERY
-----------------------------------------------------------------
-
-Exemplu: "INSERT INTO users VALUES (1, Ion, 25)"
-
-  STRING SQL
-      |
-      v
-  [ LEXER ]
-  Tokenizeaza string-ul
-      |
-      v
-  [INSERT][INTO][users][VALUES][(][1][,][Ion][,][25][)]
-      |
-      v
-  [ PARSER ]
-  Construieste obiectul AST
-      |
-      v
-  InsertStatement { table="users", values=["1","Ion","25"] }
-      |
-      v
-  [ ENGINE ]
-  executeInsert():
-  - catalog.getColumns("users") -> schema
-  - Table table("users", schema)
-  - row.values = ["1", "Ion", "25"]
-  - table.insertRow(row)
-      |
-      v
-  [ TABLE ]
-  Serialzeaza: "1|Ion|25"
-  pageManager.insertRow("1|Ion|25")
-      |
-      v
-  [ PAGE MANAGER ]
-  Gaseste pagina cu spatiu liber
-  page.addRow("1|Ion|25")
-  writePage() -> users.db (fisier binar)
-
-----------------------------------------------------------------
-EXEMPLU DE UTILIZARE (main.cpp)
-----------------------------------------------------------------
-
-  Catalog catalog;
-  Engine engine(catalog);
-
-  Queries rulate in ordine:
-  1. CREATE TABLE users (id INT, name STRING, age INT)
-     -> catalog retine schema tabelei
-
-  2. INSERT INTO users VALUES (1, Ion, 25)
-  3. INSERT INTO users VALUES (2, Ana, 30)
-  4. INSERT INTO users VALUES (3, Popa, 40)
-     -> randurile sunt scrise in users.db
-
-  5. SELECT * FROM users
-     -> afiseaza toate randurile
-
-  6. SELECT * FROM users WHERE id = 2
-     -> afiseaza doar randul cu id=2
-
-  7. DELETE FROM users WHERE id = 2
-     -> sterge randul cu id=2
-
-  8. SELECT * FROM users
-     -> afiseaza randurile ramase (1 si 3)
-
-----------------------------------------------------------------
-STATUS IMPLEMENTARE
-----------------------------------------------------------------
-
-[DONE]
-  - AST complet (Statement, Select, Insert, Delete, Create,
-                 Condition, Columns, Row)
-  - Lexer (tokenizare completa)
-  - Parser (SELECT, INSERT, DELETE, CREATE, Condition)
-  - Storage (PageHeader, Page, PageManager)
-  - Catalog
-  - Table (insert, select, delete cu evaluare conditii)
-  - Engine (execution engine end-to-end)
-  - StringUtils
-
-[TODO]
-  - B+ Tree Index
-  - Page Cache (LRU)
-  - Write-Ahead Logging (WAL)
-
-[EXTENSII HARD MODE]
-  - Query planner + cost estimation
-  - Concurenta (MVCC simplificat)
+    Rol: Sparge un string dupa un caracter; returneaza vector<string>.
+    Folosit in Table pentru deserializare "v1|v2|v3" -> { "v1", "v2", "v3" }.
 
 ================================================================

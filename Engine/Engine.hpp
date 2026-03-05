@@ -9,12 +9,15 @@
 #include "../AST/DeleteStatement/DeleteStatement.hpp"
 #include "../AST/SelectStatement/SelectStatement.hpp"
 #include "../WALManager/WALManager.hpp"
+#include "../Frontend/Lexer/Lexer.hpp"
+#include "../Frontend/Parser/Parser.hpp"
 
 class Engine {
     public:
         Engine(Catalog &catalog);
 
         void execute(Statement *statement);
+        std::vector<Row> query(const std::string &sql);
     private:
         Catalog &catalog;
         WALManager wal;

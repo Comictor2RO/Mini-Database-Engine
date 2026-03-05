@@ -6,13 +6,16 @@ Parser::Parser(const std::vector<Token> &tokens)
 
 Token Parser::currentToken()
 {
+    if (position >= (int)tokens.size())
+        return {TokenType::END_OF_FILE, ""};
     return tokens[position];
 }
 
 Token Parser::consumeToken()
 {
     Token t = currentToken();
-    position++;
+    if (position < (int)tokens.size())
+        position++;
     return t;
 }
 
@@ -86,6 +89,9 @@ InsertStatement *Parser::parseInsert()
         else
             columns.push_back(consumeToken().value); //Saves the columns
     }
+
+    if (currentToken().value != "VALUES")
+        return nullptr; // Sintaxa corecta: INSERT INTO table [ (col1,...) ] VALUES (val1,...)
 
     consumeToken(); //Jumps over VALUES
 

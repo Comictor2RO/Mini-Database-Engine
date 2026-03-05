@@ -1,4 +1,5 @@
 #include "Engine.hpp"
+#include <stdexcept>
 
 Engine::Engine(Catalog &catalog) : catalog(catalog), wal("engine.wal")
 {
@@ -64,4 +65,56 @@ void Engine::executeDelete(const DeleteStatement &stmt)
     std::vector<Columns> scheme = catalog.getColumns(stmt.getTable());
     Table table(stmt.getTable(), scheme);
     table.deleteRow(stmt.getCondition());
+}
+
+std::vector<Row> Engine::query(const std::string &sql)
+{
+    Lexer lexer(sql);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Statement *stmt = parser.parse();
+
+    std::vector<Row> results;
+
+    if (!stmt)
+        throw std::runtime_error("Invalid SQL query.");
+
+    if (SelectStatement *s = dynamic_cast<SelectStatement*>(stmt))
+    {
+        if (!catalog.tableExists(s->getTable()))
+        {
+            delete stmt;
+            throw std::runtime_error("Table " + s->getTable() + " does not exist.");
+        }
+
+        std::vector<Columns> scheme = catalog.getColumns(s->getTable());
+        Table table(s->getTable(), scheme);
+        results = table.selectRow(s->getCondition());
+    }
+    else if (InsertStatement *ins = dynamic_cast<InsertStatement*>(stmt))
+    {
+        if (!catalog.tableExists(ins->getTable()))
+        {
+            delete stmt;
+            throw std::runtime_error("Table " + ins->getTable() + " does not exist.");
+        }
+        execute(stmt);
+    }
+    else if (DeleteStatement *del = dynamic_cast<DeleteStatement*>(stmt))
+    {
+        if (!catalog.tableExists(del->getTable()))
+        {
+            delete stmt;
+            throw std::runtime_error("Table " + del->getTable() + " does not exist.");
+        }
+        execute(stmt);
+    }
+    else
+    {
+        execute(stmt);
+    }
+
+    delete stmt;
+
+    return results;
 }
