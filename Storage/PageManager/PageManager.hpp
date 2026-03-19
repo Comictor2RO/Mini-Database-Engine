@@ -17,9 +17,12 @@ class PageManager {
         //Method
         bool insertRow(const std::string &row);
         void clearAll();
+        Page readPage(int pageId);
+        void writePage(int pageId, const Page &page);
 
         //Getter
         std::vector<std::string> getAllRows();
+        int getNumberOfPages();
 
         //Destructor
         ~PageManager();
@@ -29,9 +32,6 @@ class PageManager {
         std::fstream file;
         int numberOfPages;
         LRUCache cache;
-
-        Page readPage(int pageId);
-        void writePage(int pageId, const Page &page);
 };
 
 

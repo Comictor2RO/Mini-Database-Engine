@@ -77,6 +77,11 @@ std::vector<std::string> PageManager::getAllRows()
     return rows;
 }
 
+int PageManager::getNumberOfPages()
+{
+    return numberOfPages;
+}
+
 PageManager::~PageManager()
 {
     cache.flushAll();

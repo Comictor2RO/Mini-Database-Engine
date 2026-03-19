@@ -6,9 +6,9 @@
 #include "../../AST/InsertStatement/InsertStatement.hpp"
 #include "../../AST/DeleteStatement/DeleteStatement.hpp"
 #include "../../AST/CreateStatement/CreateStatement.hpp"
-#include <vector>
-
 #include "../../AST/DropStatement/DropStatement.hpp"
+#include "../../AST/UpdateStatement/UpdateStatement.hpp"
+#include <vector>
 
 class Parser {
     public:
@@ -28,6 +28,7 @@ class Parser {
         InsertStatement *parseInsert();
         DeleteStatement *parseDelete();
         DropStatement *parseDrop();
+        UpdateStatement *parseUpdate();
         Condition *parseCondition();
 };
 

@@ -128,6 +128,66 @@ void Table::dropStorage()
     nextKey = 0;
 }
 
+void Table::updateRow(Condition *cond, std::vector<std::pair<std::string, std::string>> &assignmets)
+{
+    auto getColumnIndex = [this](const std::string &column) -> int
+    {
+        for (int i = 0; i < static_cast<int>(scheme.size()); ++i)
+        {
+            if (scheme[i].name == column)
+                return i;
+        }
+        return -1;
+    };
+
+    bool updatedAny = false;
+
+    for (int pageId = 0; pageId < pageManager.getNumberOfPages(); ++pageId)
+    {
+        Page page = pageManager.readPage(pageId);
+        std::vector<std::string> rows = page.getRows();
+        bool pageChanged = false;
+
+        for (std::string &rawRow : rows)
+        {
+            Row row;
+            row.values = split(rawRow, '|');
+
+            if (cond != nullptr && !evaluateCondition(cond, row, scheme))
+                continue;
+
+            for (const auto &assignment : assignmets)
+            {
+                int colIndex = getColumnIndex(assignment.first);
+                if (colIndex == -1)
+                    return;
+
+                if (colIndex >= static_cast<int>(row.values.size()))
+                    return;
+
+                row.values[colIndex] = assignment.second;
+            }
+
+            rawRow.clear();
+            for (int i = 0; i < static_cast<int>(row.values.size()); ++i)
+            {
+                rawRow += row.values[i];
+                if (i + 1 < static_cast<int>(row.values.size()))
+                    rawRow += "|";
+            }
+
+            pageChanged = true;
+            updatedAny = true;
+        }
+
+        if (pageChanged)
+            pageManager.writePage(pageId, page);
+    }
+
+    if (updatedAny)
+        rebuildIndex();
+}
+
 void Table::rebuildIndex()
 {
     std::vector<std::string> rawRows = pageManager.getAllRows();

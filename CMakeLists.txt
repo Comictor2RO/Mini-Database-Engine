@@ -61,6 +61,8 @@ add_executable(Mini_Database_Engine
         GUI/GUI.cpp
         AST/DropStatement/DropStatement.cpp
         AST/DropStatement/DropStatement.hpp
+        AST/UpdateStatement/UpdateStatement.cpp
+        AST/UpdateStatement/UpdateStatement.hpp
 )
 
 # Legare statică a runtime C++/GCC - .exe nu mai are nevoie de libstdc++-6.dll / libgcc_s

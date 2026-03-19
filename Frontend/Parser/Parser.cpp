@@ -303,6 +303,69 @@ DropStatement *Parser::parseDrop()
         return nullptr;
 }
 
+UpdateStatement *Parser::parseUpdate()
+{
+    std::string table;
+    std::vector<std::pair<std::string, std::string>> assignments;
+    if (!expectToken(TokenType::KEYWORD, "UPDATE"))
+        return nullptr;
+
+    table = expectToken(TokenType::IDENTIFIER);
+    if (table.empty())
+        return nullptr;
+
+    if (!expectToken(TokenType::KEYWORD, "SET"))
+        return nullptr;
+
+    auto *stmt = new UpdateStatement(table);
+    while (true)
+    {
+        std::string column = expectToken(TokenType::IDENTIFIER);
+        if (column.empty())
+        {
+            delete stmt;
+            return nullptr;
+        }
+
+        if (!expectToken(TokenType::OPERATOR, "="))
+        {
+            delete stmt;
+            return nullptr;
+        }
+
+        std::string value = expectToken(TokenType::STRING);
+        if (value.empty())
+            value = expectToken(TokenType::NUMBER);
+        if (value.empty())
+            value = expectToken(TokenType::IDENTIFIER);
+        if (value.empty())
+        {
+            delete stmt;
+            return nullptr;
+        }
+
+        stmt->addAssignements(column, value);
+
+        if (expectToken(TokenType::PUNCTUATION, ","))
+            continue;
+
+        break;
+    }
+
+    if (expectToken(TokenType::KEYWORD, "WHERE"))
+    {
+        Condition *condition = parseCondition();
+        if (!condition)
+        {
+            delete stmt;
+            return nullptr;
+        }
+        stmt->setCondition(condition);
+    }
+
+    return stmt;
+}
+
 Condition *Parser::parseCondition()
 {
     std::string column = expectToken(TokenType::IDENTIFIER);
@@ -376,5 +439,7 @@ Statement *Parser::parse()
         return parseCreate();
     if (token.value == "DROP")
         return parseDrop();
+    if (token.value == "UPDATE")
+        return parseUpdate();
     return nullptr;
 }
