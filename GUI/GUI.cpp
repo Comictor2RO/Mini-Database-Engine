@@ -1,5 +1,7 @@
 #include "GUI.hpp"
 
+#include <algorithm>
+
 GUI::GUI(Catalog &catalog, Engine &engine)
     : catalog(catalog), engine(engine), isDark(true), cursorPos(0), backspaceRepeatTimer(0)
 {}
@@ -65,7 +67,12 @@ void GUI::executeQuery()
     try
     {
         results = engine.query(input);
-        if (!results.empty())
+
+        std::string upper = input;
+        std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+        if (upper.rfind("DROP TABLE", 0) == 0)
+            logs.push_back("[OK] Table dropped.");
+        else if (!results.empty())
             logs.push_back("[OK] Rows returned: " + std::to_string(results.size()));
         else
             logs.push_back("[OK] Command executed.");

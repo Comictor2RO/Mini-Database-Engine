@@ -15,6 +15,7 @@ class Table {
         void insertRow(const Row &row);
         std::vector<Row> selectRow(Condition *cond);
         void deleteRow(Condition *cond);
+        void dropStorage();
 
     private:
         std::string name;

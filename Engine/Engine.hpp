@@ -26,6 +26,7 @@ class Engine {
         void executeInsert(const InsertStatement &statement);
         void executeDelete(const DeleteStatement &statement);
         void executeSelect(const SelectStatement &statement);
+        void executeDrop(const DropStatement &statement);
 };
 
 

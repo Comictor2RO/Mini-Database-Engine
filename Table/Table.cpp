@@ -121,6 +121,13 @@ void Table::deleteRow(Condition *cond)
         insertRow(row);
 }
 
+void Table::dropStorage()
+{
+    pageManager.clearAll();
+    index.clear();
+    nextKey = 0;
+}
+
 void Table::rebuildIndex()
 {
     std::vector<std::string> rawRows = pageManager.getAllRows();

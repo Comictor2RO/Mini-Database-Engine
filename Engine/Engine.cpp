@@ -20,11 +20,25 @@ void Engine::execute(Statement *statement)
         executeSelect(*stmt);
     else if (CreateStatement *stmt = dynamic_cast<CreateStatement *>(statement))
         executeCreate(*stmt);
+    else if (DropStatement *stmt = dynamic_cast<DropStatement *>(statement))
+        executeDrop(*stmt);
 }
 
 void Engine::executeCreate(const CreateStatement &stmt)
 {
     catalog.createTable(stmt.getTable(), stmt.getColumns());
+}
+
+void Engine::executeDrop(const DropStatement &stmt)
+{
+    if (!catalog.tableExists(stmt.getTable()))
+        throw std::runtime_error("Table " + stmt.getTable() + " does not exist.");
+    {
+        std::vector<Columns> scheme = catalog.getColumns(stmt.getTable());
+        Table table(stmt.getTable(), scheme);
+        table.dropStorage();
+    }
+    catalog.dropTable(stmt.getTable());
 }
 
 void Engine::executeInsert(const InsertStatement &stmt)
@@ -181,6 +195,15 @@ std::vector<Row> Engine::query(const std::string &sql)
         {
             delete stmt;
             throw std::runtime_error("Table " + del->getTable() + " does not exist.");
+        }
+        execute(stmt);
+    }
+    else if (DropStatement *drop = dynamic_cast<DropStatement*>(stmt))
+    {
+        if (!catalog.tableExists(drop->getTable()))
+        {
+            delete stmt;
+            throw std::runtime_error("Table " + drop->getTable() + " does not exist.");
         }
         execute(stmt);
     }

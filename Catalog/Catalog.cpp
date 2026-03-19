@@ -24,6 +24,19 @@ void Catalog::createTable(const std::string &name, const std::vector<Columns> &c
     save();
 }
 
+void Catalog::dropTable(const std::string &name)
+{
+    if (!tableExists(name))
+        return;
+
+    columns.erase(name);
+
+    std::error_code ec;
+    std::filesystem::remove(name + ".db", ec);
+
+    save();
+}
+
 std::vector<Columns> Catalog::getColumns(const std::string &name) const
 {
     if (!tableExists(name))
