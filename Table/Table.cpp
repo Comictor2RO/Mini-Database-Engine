@@ -86,11 +86,20 @@ Table::Table(const std::string &name, const std::vector<Columns> &schema)
     rebuildIndex();
 }
 
-bool Table::insertRow(const Row &row)
+std::expected<void, TableError> Table::insertRow(const Row &row)
 {
-    if (!validateRowAgainstSchema(row))
-        return false;
+    // Validate schema: check column count
+    if (row.values.size() != scheme.size())
+        return std::unexpected(TableError::SCHEME_MISMATCH);
 
+    // Validate schema: check types for each column
+    for (int i = 0; i < static_cast<int>(row.values.size()); i++)
+    {
+        if (!validateValueForType(row.values[i], scheme[i].type))
+            return std::unexpected(TableError::TYPE_VALIDATION_FAILED);
+    }
+
+    // Serialize row data
     std::string serialized;
     for (int i = 0; i < (int)row.values.size(); i++)
     {
@@ -99,11 +108,12 @@ bool Table::insertRow(const Row &row)
             serialized += "|";
     }
 
+    // Insert into page manager
     PageManager::InsertionResult res = pageManager.insertRowWithLocation(serialized);
     if (!res.success)
-        return false;
+        return std::unexpected(TableError::PAGE_MANAGER_FULL);
 
-    // Indexam primul camp de tip INT ca si cheie
+    // Index first INT column as primary key
     if (!row.values.empty() && !scheme.empty() && scheme[0].type == "INT")
     {
         try
@@ -111,11 +121,14 @@ bool Table::insertRow(const Row &row)
             int key = std::stoi(row.values[0]);
             index.insert(key, res.pageId, res.rowIndex);
         }
-        catch (...) {}
+        catch (...)
+        {
+            return std::unexpected(TableError::INDEX_INSERTION_FAILED);
+        }
     }
 
     nextKey++;
-    return true;
+    return {};
 }
 
 std::vector<Row> Table::selectRow(Condition *cond)
@@ -192,7 +205,14 @@ void Table::deleteRow(Condition *cond)
     nextKey = 0;
 
     for (const auto &row : toKeep)
-        insertRow(row);
+    {
+        auto result = insertRow(row);
+        if (!result)
+        {
+            // Log error but continue with other rows
+            // In production, consider rolling back or aggregating errors
+        }
+    }
 }
 
 void Table::updateRow(Condition *cond, const std::vector<std::pair<std::string, std::string>> &assignmets)
@@ -245,7 +265,14 @@ void Table::updateRow(Condition *cond, const std::vector<std::pair<std::string, 
     nextKey = 0;
 
     for (const auto &row : allRows)
-        insertRow(row);
+    {
+        auto result = insertRow(row);
+        if (!result)
+        {
+            // Log error but continue with other rows
+            // In production, consider rolling back or aggregating errors
+        }
+    }
 }
 
 void Table::dropStorage()

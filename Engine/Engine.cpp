@@ -64,8 +64,30 @@ void Engine::executeInsert(const InsertStatement &stmt)
 
     wal.logInsert(stmt.getTable(), rowData);
 
-    if (!table.insertRow(row))
-        throw std::runtime_error("Insert failed for table " + stmt.getTable() + ".");
+    auto result = table.insertRow(row);
+    if (!result)
+    {
+        std::string errorMsg = "Insert failed for table " + stmt.getTable() + ": ";
+        switch (result.error())
+        {
+            case TableError::SCHEME_MISMATCH:
+                errorMsg += "Column count mismatch (expected " + std::to_string(scheme.size()) + " columns)";
+                break;
+            case TableError::TYPE_VALIDATION_FAILED:
+                errorMsg += "Type validation failed (invalid value for column type)";
+                break;
+            case TableError::PAGE_MANAGER_FULL:
+                errorMsg += "Page manager full (disk space or page limit reached)";
+                break;
+            case TableError::INDEX_INSERTION_FAILED:
+                errorMsg += "Index insertion failed (B+Tree error)";
+                break;
+            default:
+                errorMsg += "Unknown error";
+                break;
+        }
+        throw std::runtime_error(errorMsg);
+    }
 
     wal.commit();
 }

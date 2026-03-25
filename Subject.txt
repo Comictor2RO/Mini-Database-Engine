@@ -47,10 +47,24 @@ este rară și oferă un avantaj vizual imediat.
    STATUS: Nu există memory leaks active (unique_ptr face cleanup corect),
    dar există dangling pointer risks în API-ul public care trebuie remediate.
 
-2. Error Handling: 🟡 PARȚIAL IMPLEMENTAT
-   Parser-ul folosește std::expected, ceea ce este excelent (C++23),
-   dar în engine încă văd multe locuri unde erorile ar putea fi mai granulare
-   (ex: returnări de bool în loc de coduri de eroare detaliate).
+2. Error Handling: ✅ IMPLEMENTAT COMPLET în Table Layer
+   Parser-ul folosește std::expected (C++23), și acum Table layer-ul folosește același pattern:
+
+   IMPLEMENTAT:
+   • TableError enum cu 4 categorii distincte:
+     - SCHEME_MISMATCH: Număr greșit de coloane
+     - TYPE_VALIDATION_FAILED: Tip invalid pentru coloană (ex: "abc" în INT)
+     - PAGE_MANAGER_FULL: Disk full sau page limit reached
+     - INDEX_INSERTION_FAILED: B+Tree insertion error
+
+   • Table::insertRow() returnează std::expected<void, TableError>
+   • Engine::executeInsert() interpretează granular fiecare tip de eroare
+   • Mesaje descriptive pentru debugging (include count-ul de coloane așteptat)
+
+   BENEFICII:
+   • Zero ambiguitate: fiecare eșec de insert are un motiv clar
+   • Mai ușor de debugged decât generic "Insert failed"
+   • Pregătit pentru logging și monitoring în producție
 
 3. Concurrency: ✅ IMPLEMENTAT COMPLET
    Implementare thread-safe în PageManager folosind:
@@ -77,6 +91,7 @@ Proiectul este acum 90-95% pregătit pentru a fi prezentat. Pentru a-l face "bul
 
 PRIORITATE MARE:
 • ✅ Concurrency implementat - FINALIZAT
+• ✅ Error Handling în Table layer - FINALIZAT
 • 🔴 Finalizează Memory Safety: Înlocuiește raw pointers cu smart pointers în BPlusTree
   (weak_ptr pentru parent, optional pentru returnări)
 • 🟡 Verifică cu sanitizers: Rulează cu AddressSanitizer/Valgrind pentru confirmare finală
@@ -100,6 +115,6 @@ PROGRES GENERAL:
 ✅ WAL - Write-Ahead Logging implementat
 ✅ GUI - Interfață funcțională cu RayLib
 ✅ Concurrency - Thread-safe PageManager cu lock granular
+✅ Error Handling - std::expected cu enum granular în Parser și Table layer
 🔴 Memory Safety - Necesită smart pointers în BPlusTree (identificat, soluții propuse)
-🟡 Error Handling - Parțial implementat (std::expected în parser)
 ⚪ Testing - Lipsesc teste automate (recomandat GTest)

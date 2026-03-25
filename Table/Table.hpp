@@ -7,12 +7,21 @@
 #include "../AST/Row/Row.hpp"
 #include "../Indexing/BPlusTree/BPlusTree.hpp"
 #include "../StringUtils/StringUtils.hpp"
+#include <expected>
+
+enum class TableError {
+    SUCCESS,
+    SCHEME_MISMATCH,
+    TYPE_VALIDATION_FAILED,
+    PAGE_MANAGER_FULL,
+    INDEX_INSERTION_FAILED,
+};
 
 class Table {
     public:
         Table(const std::string &name, const std::vector<Columns> &scheme);
 
-        bool insertRow(const Row &row);
+        std::expected<void, TableError> insertRow(const Row &row);
         std::vector<Row> selectRow(Condition *cond);
         void deleteRow(Condition *cond);
         void dropStorage();
