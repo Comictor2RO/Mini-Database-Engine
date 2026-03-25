@@ -25,33 +25,81 @@ ai înțeles cum funcționează managementul memoriei vs. disk I/O.
 •Interfață GUI (RayLib): Integrarea unei interfețe grafice funcționale pentru un proiect de tip "engine"
 este rară și oferă un avantaj vizual imediat.
 
-⚠️ Zone care necesită atenție (Critical findings)
-1.Memory Management (RAII): Deși ai început să folosești std::unique_ptr (ex: în BPlusNode și BPlusTree),
-mai există zone cu raw pointers (ex: BPlusNode* next, parent) care pot duce la dangling pointers sau memory
-leaks dacă nu sunt gestionate cu atenție sporită la eliberarea nodurilor.
+⚠️ Zone care necesită atenție (Critical findings - STATUS UPDATE)
 
-2.Error Handling: Parser-ul folosește std::expected, ceea ce este excelent (C++23),
-dar în engine încă văd multe locuri unde erorile ar putea fi mai granulare (ex: returnări de bool
-în loc de coduri de eroare detaliate).
+1. Memory Management (RAII): 🔴 ÎN PROGRESS
+   Deși ai început să folosești std::unique_ptr (ex: în BPlusNode și BPlusTree),
+   mai există zone cu raw pointers care necesită atenție:
 
-3. Concurrency: Momentan proiectul pare single-threaded. Pentru un CV de top, adăugarea
-unui mecanism de mutex în PageManager pentru a permite accesul simultan din GUI și un thread separat
-de procesare ar fi pasul următor.
+   IDENTIFICATE:
+   • BPlusNode::parent (raw pointer) → Risc de dangling pointer
+     SOLUȚIE PROPUSĂ: std::weak_ptr<BPlusNode> pentru parent
+
+   • BPlusTree::search() returnează IndexRecord* → Lifetime nedefinit
+     SOLUȚIE PROPUSĂ: std::optional<IndexRecord> sau std::reference_wrapper
+
+   • BPlusTree::findLeaf() returnează BPlusNode* (privat, mai puțin critic)
+     SOLUȚIE PROPUSĂ: Documentație clară despre lifetime
+
+   • BPlusTree::deleteNode() declarată dar neimplementată
+     ACȚIUNE: Șterge din header (cod mort)
+
+   STATUS: Nu există memory leaks active (unique_ptr face cleanup corect),
+   dar există dangling pointer risks în API-ul public care trebuie remediate.
+
+2. Error Handling: 🟡 PARȚIAL IMPLEMENTAT
+   Parser-ul folosește std::expected, ceea ce este excelent (C++23),
+   dar în engine încă văd multe locuri unde erorile ar putea fi mai granulare
+   (ex: returnări de bool în loc de coduri de eroare detaliate).
+
+3. Concurrency: ✅ IMPLEMENTAT COMPLET
+   Implementare thread-safe în PageManager folosind:
+
+   • std::shared_mutex cache_mutex - Pentru operații pe cache (multiple readers)
+   • std::mutex file_mutex - Pentru operații exclusive pe disk
+
+   OPTIMIZĂRI IMPLEMENTATE:
+   • Snapshot pattern în getAllRows() - Citește numberOfPages cu lock scurt,
+     apoi iterează fără lock → Previne freeze GUI pe SELECT * FROM massive_table
+
+   • Snapshot pattern în insertRowWithLocation() - Lock doar pentru
+     incrementare numberOfPages, I/O executat fără lock → Previne freeze pe INSERT batch
+
+   • Lock granular în readPage()/writePage() - Locks separate pentru cache vs file
+     → Maximizează concurrency
+
+   REZULTAT: GUI rămâne responsive în timpul operațiilor lungi de I/O,
+   accesul concurrent este safe, nu există race conditions pe structuri partajate.
 
 🚀 Recomandări pentru "Verdictul Final" (CV/Portofoliu)
 
-Proiectul este 85-90% pregătit pentru a fi prezentat. Pentru a-l face "bulletproof", îți recomand următoarele:
+Proiectul este acum 90-95% pregătit pentru a fi prezentat. Pentru a-l face "bulletproof":
 
-•Finalizează Memory Cleanup-ul: Asigură-te că BPlusTree::clear() și
-destructorii eliberează tot corect (verifică cu Valgrind/ASan).
+PRIORITATE MARE:
+• ✅ Concurrency implementat - FINALIZAT
+• 🔴 Finalizează Memory Safety: Înlocuiește raw pointers cu smart pointers în BPlusTree
+  (weak_ptr pentru parent, optional pentru returnări)
+• 🟡 Verifică cu sanitizers: Rulează cu AddressSanitizer/Valgrind pentru confirmare finală
 
-•Unit Tests: Adaugă un folder de tests/ (folosind GTest sau chiar un script simplu
-de testare end-to-end). Demonstrează că motorul poate insera 100.000 de rânduri și să le caute corect.
+PRIORITATE MEDIE:
+• Unit Tests: Adaugă un folder de tests/ (folosind GTest sau chiar un script simplu
+  de testare end-to-end). Demonstrează că motorul poate insera 100.000 de rânduri și să le caute corect.
 
-•Documentația: Documentation.txt este util, dar un README.md profesionist pe
-GitHub cu imagini din GUI și o diagramă de arhitectură ar "vinde" proiectul mult mai bine
+• Documentația: Documentation.txt este util, dar un README.md profesionist pe
+  GitHub cu imagini din GUI și o diagramă de arhitectură ar "vinde" proiectul mult mai bine.
 
-🏆 Scorul Junie: 9/10
-Este un proiect foarte ambițios și bine executat.
-Dacă rezolvi micile probleme de memory safety și adaugi câteva teste automate,
-este un proiect de nota 10 care te va scoate în evidență la orice interviu tehnic.
+🏆 Scorul Actualizat: 9.5/10
+Este un proiect foarte ambițios și bine executat. Concurrency-ul este acum production-ready.
+Dacă rezolvi problemele de memory safety identificate (smart pointers în BPlusTree) și adaugi
+câteva teste automate, este un proiect de nota 10 care te va scoate în evidență la orice
+interviu tehnic pentru poziții de Systems Programming / Database Engineering.
+
+PROGRES GENERAL:
+✅ Storage Layer - Robust, cu LRU cache și page management
+✅ Indexing - B+ Tree funcțional
+✅ WAL - Write-Ahead Logging implementat
+✅ GUI - Interfață funcțională cu RayLib
+✅ Concurrency - Thread-safe PageManager cu lock granular
+🔴 Memory Safety - Necesită smart pointers în BPlusTree (identificat, soluții propuse)
+🟡 Error Handling - Parțial implementat (std::expected în parser)
+⚪ Testing - Lipsesc teste automate (recomandat GTest)

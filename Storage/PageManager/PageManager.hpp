@@ -4,9 +4,10 @@
 #include "../LRUCache/LRUCache.hpp"
 #include "../Page/Page.hpp"
 #include <string>
-#include <iostream>
 #include <fstream>
 #include <vector>
+#include <mutex>
+#include <shared_mutex>
 
 class PageManager {
     public:
@@ -15,14 +16,14 @@ class PageManager {
         PageManager(std::string filename);
 
         //Method
-    struct InsertionResult {
-        bool success;
-        int pageId;
-        int rowIndex;
-    };
+        struct InsertionResult {
+            bool success;
+            int pageId;
+            int rowIndex;
+        };
 
-    InsertionResult insertRowWithLocation(const std::string &row);
-    bool insertRow(const std::string &row);
+        InsertionResult insertRowWithLocation(const std::string &row);
+        bool insertRow(const std::string &row);
         void clearAll();
         Page readPage(int pageId);
         void writePage(int pageId, const Page &page);
@@ -35,6 +36,8 @@ class PageManager {
         ~PageManager();
         
     private:
+        mutable std::shared_mutex cache_mutex;
+        mutable std::mutex file_mutex;
         std::string filename;
         std::fstream file;
         int numberOfPages;

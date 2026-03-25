@@ -1,6 +1,7 @@
 #include "PageManager.hpp"
 
 PageManager::PageManager(std::string filename) : cache(16, file) {
+    std::unique_lock<std::mutex> lock(file_mutex);
     this->filename = filename;
     file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
 
@@ -20,23 +21,37 @@ PageManager::PageManager(std::string filename) : cache(16, file) {
 
 PageManager::InsertionResult PageManager::insertRowWithLocation(const std::string &row)
 {
-    if (numberOfPages > 0)
+    // Snapshot numberOfPages to check if we have pages
+    int currentPages;
     {
-        Page lastPage = readPage(numberOfPages - 1);
+        std::shared_lock<std::shared_mutex> lock(cache_mutex);
+        currentPages = numberOfPages;
+    }
+
+    // Try to insert in last page (no lock held during I/O)
+    if (currentPages > 0)
+    {
+        Page lastPage = readPage(currentPages - 1);
         if (lastPage.hasSpace(row.length() + 1))
         {
             int rowIndex = lastPage.getRowCount();
             lastPage.addRow(row);
-            writePage(numberOfPages - 1, lastPage);
-            return {true, numberOfPages - 1, rowIndex};
+            writePage(currentPages - 1, lastPage);
+            return {true, currentPages - 1, rowIndex};
         }
     }
+
+    // Need new page - acquire write lock
+    std::unique_lock<std::shared_mutex> write_lock(cache_mutex);
     Page newPage(numberOfPages);
     if (!newPage.addRow(row))
         return {false, -1, -1};
-    writePage(numberOfPages, newPage);
+    int newPageId = numberOfPages;
     numberOfPages++;
-    return {true, numberOfPages - 1, 0};
+    write_lock.unlock();
+
+    writePage(newPageId, newPage);
+    return {true, newPageId, 0};
 }
 
 bool PageManager::insertRow(const std::string &row)
@@ -46,51 +61,87 @@ bool PageManager::insertRow(const std::string &row)
 
 void PageManager::clearAll()
 {
-    cache.clear();
-    if (file.is_open())
+    {
+        std::unique_lock<std::shared_mutex> lock(cache_mutex);
+        cache.clear();
+    }
+
+    {
+        std::unique_lock<std::mutex> lock(file_mutex);
+
+        if (file.is_open())
+            file.close();
+
+        // Trunchiere fisier
+        file.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+        if (!file.is_open()) {
+            throw std::runtime_error("Nu s-a putut trunchia fisierul: " + filename);
+        }
         file.close();
 
-    // Trunchiere fisier
-    file.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Nu s-a putut trunchia fisierul: " + filename);
-    }
-    file.close();
+        // Redeschidere pentru in/out
+        file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open()) {
+            throw std::runtime_error("Nu s-a putut redeschide fisierul dupa trunchiere: " + filename);
+        }
 
-    // Redeschidere pentru in/out
-    file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Nu s-a putut redeschide fisierul dupa trunchiere: " + filename);
+        file.clear(); // Reset error flags (EOF etc.)
+        numberOfPages = 0;
     }
-
-    file.clear(); // Reset error flags (EOF etc.)
-    numberOfPages = 0;
 }
 
 Page PageManager::readPage(int pageNumber)
 {
-    Page page;
-    Page *cached = cache.get(pageNumber);
-    if (cached != nullptr)
-        return *cached;
-    file.clear();
-    file.seekg(pageNumber * PAGE_SIZE); //Changes the current position where to read
-    file.read(page.getBuffer(), PAGE_SIZE);
+    {
+        std::shared_lock<std::shared_mutex> cache_lock(cache_mutex);
+        Page *cached = cache.get(pageNumber);
+        if (cached != nullptr)
+            return *cached;
+    }
+    {
+        std::unique_lock<std::mutex> file_lock(file_mutex);
+        file.clear();
+        file.seekg(pageNumber * PAGE_SIZE);
+        Page page;
+        file.read(page.getBuffer(), PAGE_SIZE);
 
-    cache.put(pageNumber, page, false);
-    return page;
+        {
+            std::unique_lock<std::shared_mutex> cache_lock(cache_mutex);
+            cache.put(pageNumber, page, false);
+        }
+        return page;
+    }
 }
 
 void PageManager::writePage(int pageId, const Page &page)
 {
-    cache.put(pageId, page, true);
+    {
+        std::unique_lock<std::shared_mutex> cache_lock(cache_mutex);
+        cache.put(pageId, page, true);
+    }
+
+    {
+        std::unique_lock<std::mutex> file_lock(file_mutex);
+        file.seekp(pageId * PAGE_SIZE, std::ios::beg);
+        file.write(page.getBuffer(), PAGE_SIZE);
+        if (pageId >= numberOfPages) {
+            std::unique_lock<std::shared_mutex> num_lock(cache_mutex);
+            numberOfPages = pageId + 1;
+        }
+    }
 }
 
 std::vector<std::string> PageManager::getAllRows()
 {
-    std::vector<std::string> rows;
+    // Snapshot numberOfPages to avoid race conditions
+    int totalPages;
+    {
+        std::shared_lock lock(cache_mutex);
+        totalPages = numberOfPages;
+    }
 
-    for (int i = 0; i < numberOfPages; i++) {
+    std::vector<std::string> rows;
+    for (int i = 0; i < totalPages; i++) {
         Page page = readPage(i);
         std::vector<std::string> pageRows = page.getRows();
         rows.insert(rows.end(), pageRows.begin(), pageRows.end());
@@ -101,12 +152,18 @@ std::vector<std::string> PageManager::getAllRows()
 
 int PageManager::getNumberOfPages()
 {
+    std::shared_lock<std::shared_mutex> num_lock(cache_mutex);
     return numberOfPages;
 }
 
 PageManager::~PageManager()
 {
-    cache.flushAll();
-    if (file.is_open())
-        file.close();
+    {
+        std::unique_lock<std::shared_mutex> lock(cache_mutex);
+        cache.flushAll();
+    }
+    {
+        std::unique_lock<std::mutex> lock(file_mutex);
+        if (file.is_open()) file.close();
+    }
 }
