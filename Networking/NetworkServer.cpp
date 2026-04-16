@@ -28,3 +28,26 @@ void NetworkServer::acceptConnections()
         acceptConnections();
     });
 }
+
+// Handles communication with a connected client
+void NetworkServer::handleClient(tcp::socket socket)
+{
+    auto sharedSocket = std::make_shared<tcp::socket>(std::move(socket));
+    auto buffer = std::make_shared<asio::streambuf>();
+
+    asio::async_read_until(*sharedSocket, *buffer, "\n", [this, sharedSocket, buffer](asio::error_code ec, std::size_t bytes_transferred) {
+        if (!ec && bytes_transferred > 0) {
+
+            std::istream is(buffer.get());
+            std::string message;
+            std::getline(is, message);
+
+            executeCommand(message);
+        }
+        else {
+            std::cerr << "Error reading from client: " << ec.message() << std::endl;
+        }
+    });
+}
+
+

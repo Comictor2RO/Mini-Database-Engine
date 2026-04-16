@@ -21,6 +21,8 @@ class NetworkServer {
 
         void openServer();
         void acceptConnections();
+        void handleClient(tcp::socket socket);
+        void executeQuery(std::string query);
 };
 
 #endif
