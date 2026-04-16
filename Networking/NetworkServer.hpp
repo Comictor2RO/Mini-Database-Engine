@@ -4,6 +4,7 @@
 #include <asio.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
+#include <string>
 #include "Engine.hpp"
 
 using asio::ip::tcp;
@@ -22,7 +23,7 @@ class NetworkServer {
         void openServer();
         void acceptConnections();
         void handleClient(tcp::socket socket);
-        void executeQuery(std::string query);
+        std::string executeQuery(std::string &query);
 };
 
 #endif

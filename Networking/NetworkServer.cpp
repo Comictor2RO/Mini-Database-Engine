@@ -42,12 +42,16 @@ void NetworkServer::handleClient(tcp::socket socket)
             std::string message;
             std::getline(is, message);
 
-            executeCommand(message);
+            executeQuery(message);
         }
         else {
             std::cerr << "Error reading from client: " << ec.message() << std::endl;
         }
     });
+}
+
+std::string NetworkServer::executeQuery(std::string &query) {
+
 }
 
 
