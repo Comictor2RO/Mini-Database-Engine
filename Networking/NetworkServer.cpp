@@ -2,16 +2,25 @@
 #include "NetworkServer.hpp"
 #include <iostream>
 
-NetworkServer::NetworkServer(size_t port, Engine &engine)
-    : port(port), engine(engine), acceptor(io_context)
+NetworkServer::NetworkServer(Engine &engine)
+    : engine(engine), acceptor(io_context)
 {};
 
-void NetworkServer::start()
+void NetworkServer::prepare()
 {
     io_context.restart();
     openServer();
     acceptConnections();
+}
+
+void NetworkServer::run()
+{
     io_context.run();
+}
+
+size_t NetworkServer::getPort() const
+{
+    return port;
 }
 
 void NetworkServer::stop()
@@ -21,13 +30,23 @@ void NetworkServer::stop()
     std::cout << "Server stopped." << std::endl;
 }
 
-// Opens the server on the specified port
+// Opens the server, auto-detecting a free port in range [3000, 8000]
 void NetworkServer::openServer()
 {
-    acceptor.open(tcp::v4());
-    acceptor.bind(tcp::endpoint(tcp::v4(), port));
-    acceptor.listen();
-    std::cout << "Server started at 127.0.0.1:" << port << std::endl;
+    for (size_t p = 3000; p <= 8000; p++) {
+        try {
+            acceptor.open(tcp::v4());
+            acceptor.bind(tcp::endpoint(tcp::v4(), p));
+            acceptor.listen();
+            port = p;
+            return;
+        }
+        catch (const asio::system_error &) {
+            if (acceptor.is_open())
+                acceptor.close();
+        }
+    }
+    throw std::runtime_error("No free port found in range 3000-8000");
 }
 
 // Accepts incoming connections and handles them async

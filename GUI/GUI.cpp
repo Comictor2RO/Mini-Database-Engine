@@ -3,7 +3,7 @@
 #include <algorithm>
 
 GUI::GUI(Catalog &catalog, Engine &engine)
-    : catalog(catalog), engine(engine), server(5432, engine), serverRunning(false), isDark(true), cursorPos(0), backspaceRepeatTimer(0)
+    : catalog(catalog), engine(engine), server(engine), serverRunning(false), isDark(true), cursorPos(0), backspaceRepeatTimer(0)
 {}
 
 void GUI::run()
@@ -41,10 +41,18 @@ void GUI::toggleServer()
 {
     if (!serverRunning)
     {
+        try {
+            server.prepare();
+        }
+        catch (const std::exception &e) {
+            logs.push_back("[SERVER ERROR] " + std::string(e.what()));
+            return;
+        }
+        logs.push_back("[SERVER] Started on port " + std::to_string(server.getPort()) + ".");
         serverRunning = true;
         serverThread = std::thread([this]() {
             try {
-                server.start();
+                server.run();
             }
             catch (const std::exception &e) {
                 serverRunning = false;
@@ -52,7 +60,6 @@ void GUI::toggleServer()
                 logs.push_back("[SERVER ERROR] " + std::string(e.what()));
             }
         });
-        logs.push_back("[SERVER] Started on port 5432.");
     }
     else
     {

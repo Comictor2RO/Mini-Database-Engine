@@ -26,13 +26,15 @@ using asio::ip::tcp;
 
 class NetworkServer {
     public:
-        NetworkServer(size_t port, Engine &engine);
+        NetworkServer(Engine &engine);
 
-        void start();
+        void prepare();
+        void run();
         void stop();
+        size_t getPort() const;
 
     private:
-        size_t port;
+        size_t port = 0;
         asio::io_context io_context;
         tcp::acceptor acceptor;
         Engine &engine;

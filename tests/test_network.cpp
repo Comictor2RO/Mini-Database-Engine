@@ -12,7 +12,6 @@ protected:
     Engine *engine = nullptr;
     NetworkServer *server = nullptr;
     std::thread serverThread;
-    const size_t TEST_PORT = 9998;
 
     void SetUp() override {
         cleanup();
@@ -22,9 +21,9 @@ protected:
         engine->query("INSERT INTO net_users VALUES (1, Alice)");
         engine->query("INSERT INTO net_users VALUES (2, Bob)");
 
-        server = new NetworkServer(TEST_PORT, *engine);
-        serverThread = std::thread([this]() { server->start(); });
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        server = new NetworkServer(*engine);
+        server->prepare();
+        serverThread = std::thread([this]() { server->run(); });
     }
 
     void TearDown() override {
@@ -46,7 +45,7 @@ protected:
         asio::io_context ctx;
         tcp::socket sock(ctx);
         tcp::resolver resolver(ctx);
-        auto endpoints = resolver.resolve("127.0.0.1", std::to_string(TEST_PORT));
+        auto endpoints = resolver.resolve("127.0.0.1", std::to_string(server->getPort()));
         asio::connect(sock, endpoints);
 
         std::string msg = query + "\n";
@@ -93,4 +92,25 @@ TEST_F(NetworkServerTest, DeleteReturnsOK) {
     std::string selectResponse = sendQuery("SELECT * FROM net_users");
     EXPECT_EQ(selectResponse.find("Alice"), std::string::npos);
     EXPECT_NE(selectResponse.find("Bob"), std::string::npos);
+}
+
+// Test 6: Auto port detection - al doilea server alege un port diferit
+TEST_F(NetworkServerTest, AutoPortDetectionPicksDifferentPort) {
+    size_t firstPort = server->getPort();
+    EXPECT_GE(firstPort, 3000u);
+    EXPECT_LE(firstPort, 8000u);
+
+    Catalog catalog2;
+    Engine engine2(catalog2);
+    NetworkServer server2(engine2);
+    server2.prepare();
+    std::thread t([&]() { server2.run(); });
+
+    size_t secondPort = server2.getPort();
+    EXPECT_NE(secondPort, firstPort);
+    EXPECT_GE(secondPort, 3000u);
+    EXPECT_LE(secondPort, 8000u);
+
+    server2.stop();
+    t.join();
 }
