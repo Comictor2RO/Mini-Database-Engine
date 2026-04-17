@@ -41,8 +41,17 @@ void GUI::toggleServer()
 {
     if (!serverRunning)
     {
-        serverThread = std::thread([this]() { server.start(); });
         serverRunning = true;
+        serverThread = std::thread([this]() {
+            try {
+                server.start();
+            }
+            catch (const std::exception &e) {
+                serverRunning = false;
+                std::lock_guard<std::mutex> lock(logsMutex);
+                logs.push_back("[SERVER ERROR] " + std::string(e.what()));
+            }
+        });
         logs.push_back("[SERVER] Started on port 5432.");
     }
     else
@@ -255,6 +264,8 @@ void GUI::drawLogPanel()
 
     int lineHeight = 19;
     int maxLines   = (200 - 30) / lineHeight;
+
+    std::lock_guard<std::mutex> lock(logsMutex);
     int startIdx   = (int)logs.size() > maxLines ? (int)logs.size() - maxLines : 0;
 
     for (int i = startIdx; i < (int)logs.size(); i++)

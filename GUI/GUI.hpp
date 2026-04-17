@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <mutex>
 #include "raylib.h"
 #include "../AST/Row/Row.hpp"
 #include "../Catalog/Catalog.hpp"
@@ -22,6 +23,7 @@ class GUI {
         float backspaceRepeatTimer;
         std::vector<Row> results;
         std::vector<std::string> logs;
+        std::mutex logsMutex;
         bool isDark;
         Catalog &catalog;
         Engine &engine;

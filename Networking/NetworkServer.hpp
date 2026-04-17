@@ -18,6 +18,7 @@
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
 #include <string>
+#include <mutex>
 
 class Engine;
 
@@ -35,6 +36,7 @@ class NetworkServer {
         asio::io_context io_context;
         tcp::acceptor acceptor;
         Engine &engine;
+        std::mutex engineMutex;
 
         void openServer();
         void acceptConnections();

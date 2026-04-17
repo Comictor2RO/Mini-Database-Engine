@@ -8,6 +8,7 @@ NetworkServer::NetworkServer(size_t port, Engine &engine)
 
 void NetworkServer::start()
 {
+    io_context.restart();
     openServer();
     acceptConnections();
     io_context.run();
@@ -36,6 +37,9 @@ void NetworkServer::acceptConnections()
         if (!ec) {
             handleClient(std::move(socket));
             std::cout << "Client connected" << std::endl;
+        }
+        else if (ec == asio::error::operation_aborted) {
+            return;
         }
         else {
             std::cerr << "Error accepting connection: " << ec.message() << std::endl;
@@ -71,6 +75,7 @@ void NetworkServer::handleClient(tcp::socket socket)
 
 std::string NetworkServer::executeQuery(std::string &query)
 {
+    std::lock_guard<std::mutex> lock(engineMutex);
     try {
         std::vector<Row> rows = engine.query(query);
 
