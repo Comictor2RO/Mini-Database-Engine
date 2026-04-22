@@ -121,5 +121,3 @@ std::string NetworkServer::executeQuery(std::string &query)
         return std::string("ERROR: ") + e.what() + "\n";
     }
 }
-
-
