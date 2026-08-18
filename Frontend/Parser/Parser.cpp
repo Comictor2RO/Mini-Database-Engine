@@ -373,6 +373,24 @@ std::expected<std::unique_ptr<CreateDatabaseStatement>, ParseError> Parser::pars
     return std::make_unique<CreateDatabaseStatement>(name);
 }
 
+std::expected<std::unique_ptr<DropDatabaseStatement>, ParseError> Parser::parseDropDatabase()
+{
+    if (!expectToken(TokenType::KEYWORD, "DROP"))
+        return std::unexpected(ParseError::MissingKeyword);
+
+    if (!expectToken(TokenType::KEYWORD, "DATABASE"))
+        return std::unexpected(ParseError::MissingKeyword);
+
+    std::string name = expectToken(TokenType::IDENTIFIER);
+    if (name.empty())
+        return std::unexpected(ParseError::InvalidIdentifier);
+
+    if (currentToken().type != TokenType::END_OF_FILE)
+        return std::unexpected(ParseError::ExtraTokens);
+
+    return std::make_unique<DropDatabaseStatement>(name);
+}
+
 std::expected<std::unique_ptr<UseDatabaseStatement>, ParseError> Parser::parseUseDatabase()
 {
     if (!expectToken(TokenType::KEYWORD, "USE"))
@@ -410,8 +428,11 @@ std::expected<std::unique_ptr<Statement>, ParseError> Parser::parse()
             return parseCreateDatabase();
         return parseCreate();
     }
-    if (token.value == "DROP")
+    if (token.value == "DROP") {
+        if (position + 1 < (int)tokens.size() && tokens[position + 1].value == "DATABASE")
+            return parseDropDatabase();
         return parseDrop();
+    }
     if (token.value == "UPDATE")
         return parseUpdate();
     if (token.value == "USE")

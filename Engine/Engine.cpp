@@ -1,9 +1,20 @@
 #include "Engine.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <stdexcept>
 #include <filesystem>
 #include <fstream>
+#include <system_error>
+
+// Filenames are case-insensitive on Windows, so database names must be compared that way
+static bool equalsIgnoreCase(const std::string &a, const std::string &b)
+{
+    return a.size() == b.size()
+        && std::equal(a.begin(), a.end(), b.begin(), [](unsigned char x, unsigned char y) {
+               return std::tolower(x) == std::tolower(y);
+           });
+}
 
 Engine::Engine(int cacheCapacity,
                const std::string &storagePath,
@@ -14,6 +25,7 @@ Engine::Engine(int cacheCapacity,
       wal(std::make_unique<WALManager>(walPath)),
       cacheCapacity(cacheCapacity)
 {
+    currentDatabase = std::filesystem::path(storagePath).stem().string();
     wal->recover(*this);
 }
 
@@ -33,6 +45,7 @@ void Engine::switchDatabase(const std::string &storagePath,
     catalog = std::make_unique<Catalog>(catalogPath);
     storage = std::make_unique<StorageFile>(storagePath);
     wal     = std::make_unique<WALManager>(walPath);
+    currentDatabase = std::filesystem::path(storagePath).stem().string();
     wal->recover(*this);
 }
 
@@ -54,6 +67,8 @@ void Engine::execute(Statement *statement)
         executeUpdate(*stmt);
     else if (CreateDatabaseStatement *stmt = dynamic_cast<CreateDatabaseStatement *>(statement))
         executeCreateDatabase(*stmt);
+    else if (DropDatabaseStatement *stmt = dynamic_cast<DropDatabaseStatement *>(statement))
+        executeDropDatabase(*stmt);
     else if (UseDatabaseStatement *stmt = dynamic_cast<UseDatabaseStatement *>(statement))
         executeUseDatabase(*stmt);
 }
@@ -219,6 +234,28 @@ void Engine::executeCreateDatabase(const CreateDatabaseStatement &stmt)
         std::ofstream(base + ".db").close();
     if (!std::filesystem::exists(base + ".cat"))
         std::ofstream(base + ".cat").close();
+}
+
+void Engine::executeDropDatabase(const DropDatabaseStatement &stmt)
+{
+    const std::string &name = stmt.getName();
+
+    if (equalsIgnoreCase(name, currentDatabase))
+        throw std::runtime_error("Cannot drop the currently active database '" + name + "' (USE another database first)");
+
+    std::string base = "databases/" + name;
+    if (!std::filesystem::exists(base + ".db"))
+        throw std::runtime_error("Database '" + name + "' does not exist");
+
+    // .db goes last so a partial failure leaves the database still droppable.
+    // .wal is absent until something has been written, which remove() treats as a no-op.
+    for (const char *ext : {".wal", ".cat", ".db"})
+    {
+        std::error_code ec;
+        std::filesystem::remove(base + ext, ec);
+        if (ec)
+            throw std::runtime_error("Failed to delete database '" + name + "': " + ext + " is in use");
+    }
 }
 
 void Engine::executeUseDatabase(const UseDatabaseStatement &stmt)

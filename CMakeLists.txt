@@ -120,6 +120,8 @@ add_executable(NexDB
         Networking/NetworkServer.hpp
         Config/Config.cpp
         Config/Config.hpp
+        AST/DropDatabaseStatement/DropDatabaseStatement.cpp
+        AST/DropDatabaseStatement/DropDatabaseStatement.hpp
 )
 
 # Link main app

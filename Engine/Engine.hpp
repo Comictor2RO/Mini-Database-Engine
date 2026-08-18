@@ -13,6 +13,7 @@
 #include "../Frontend/Parser/Parser.hpp"
 #include "../Storage/StorageFile/StorageFile.hpp"
 #include "../AST/CreateDatabaseStatement/CreateDatabaseStatement.hpp"
+#include "../AST/DropDatabaseStatement/DropDatabaseStatement.hpp"
 #include "../AST/UseDatabaseStatement/UseDatabaseStatement.hpp"
 #include <memory>
 
@@ -43,6 +44,7 @@ class Engine {
         std::unique_ptr<WALManager>  wal;
         int cacheCapacity;
         std::string pendingSwitch;
+        std::string currentDatabase;
         std::vector<std::string> lastColumns;
 
         void executeCreate(const CreateStatement &statement);
@@ -52,6 +54,7 @@ class Engine {
         void executeDrop(const DropStatement &statement);
         void executeUpdate(const UpdateStatement &statement);
         void executeCreateDatabase(const CreateDatabaseStatement &statement);
+        void executeDropDatabase(const DropDatabaseStatement &statement);
         void executeUseDatabase(const UseDatabaseStatement &statement);
         void dropTableStorage(const std::string &tableName);
 

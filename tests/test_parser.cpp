@@ -151,3 +151,41 @@ TEST(ParserTest, ParseEmptyTokens) {
 
     EXPECT_FALSE(result.has_value());
 }
+
+// Test 11: Parse DROP DATABASE statement
+TEST(ParserTest, ParseDropDatabase) {
+    Lexer lexer("DROP DATABASE mydb;");
+    auto tokens = lexer.tokenize();
+    Parser parser(tokens);
+    auto result = parser.parse();
+
+    EXPECT_TRUE(result.has_value());
+    auto stmt = std::move(result.value());
+    auto* dropDbStmt = dynamic_cast<DropDatabaseStatement*>(stmt.get());
+    EXPECT_NE(dropDbStmt, nullptr);
+    EXPECT_EQ(dropDbStmt->getName(), "mydb");
+}
+
+// Test 12: DROP TABLE still resolves to DropStatement, not DropDatabaseStatement
+// (the DROP peek added for DROP DATABASE is what could break this)
+TEST(ParserTest, ParseDropTableNotConfusedWithDropDatabase) {
+    Lexer lexer("DROP TABLE users;");
+    auto tokens = lexer.tokenize();
+    Parser parser(tokens);
+    auto result = parser.parse();
+
+    ASSERT_TRUE(result.has_value());
+    auto stmt = std::move(result.value());
+    EXPECT_NE(dynamic_cast<DropStatement*>(stmt.get()), nullptr);
+    EXPECT_EQ(dynamic_cast<DropDatabaseStatement*>(stmt.get()), nullptr);
+}
+
+// Test 13: DROP DATABASE without a name is a parse error, not a silent success
+TEST(ParserTest, ParseDropDatabaseWithoutNameFails) {
+    Lexer lexer("DROP DATABASE;");
+    auto tokens = lexer.tokenize();
+    Parser parser(tokens);
+    auto result = parser.parse();
+
+    EXPECT_FALSE(result.has_value());
+}

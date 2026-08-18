@@ -9,6 +9,7 @@
 #include "../../AST/DropStatement/DropStatement.hpp"
 #include "../../AST/UpdateStatement/UpdateStatement.hpp"
 #include "../../AST/CreateDatabaseStatement/CreateDatabaseStatement.hpp"
+#include "../../AST/DropDatabaseStatement/DropDatabaseStatement.hpp"
 #include "../../AST/UseDatabaseStatement/UseDatabaseStatement.hpp"
 #include <vector>
 #include <string>
@@ -60,6 +61,7 @@ class Parser {
         std::expected<std::unique_ptr<DropStatement>, ParseError> parseDrop();
         std::expected<std::unique_ptr<UpdateStatement>, ParseError> parseUpdate();
         std::expected<std::unique_ptr<CreateDatabaseStatement>, ParseError> parseCreateDatabase();
+        std::expected<std::unique_ptr<DropDatabaseStatement>, ParseError> parseDropDatabase();
         std::expected<std::unique_ptr<UseDatabaseStatement>, ParseError> parseUseDatabase();
         std::expected<Condition *, ParseError> parseCondition();
 };

@@ -146,6 +146,8 @@ void GUI::executeQuery()
         std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
         if (upper.rfind("DROP TABLE", 0) == 0)
             logs.push_back("[OK] Table dropped.");
+        else if (upper.rfind("DROP DATABASE", 0) == 0)
+            logs.push_back("[OK] Database dropped.");
         else if (!results.empty())
             logs.push_back("[OK] Rows returned: " + std::to_string(results.size()));
         else

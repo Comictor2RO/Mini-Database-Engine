@@ -67,7 +67,7 @@ ambiguități de delimitatori, extensibil (poți adăuga câmpuri fără breakin
   din `WALManager.cpp` (`WAL parse error: ...`). Restul mesajelor din `Engine.cpp` erau deja în
   engleză — uniformizate stilistic (fără punct final). Struct-ul mort `ParseResult` din
   `Parser.hpp` a fost eliminat. Test nou anti-regresie în `tests/test_engine.cpp` (11c).
-- [ ] **Validare config** — crash dacă `config.json` are valori invalide (ex. `"port": "abc"`).
+- [x] **Validare config** ✅ *(rezolvat)* — crash dacă `config.json` are valori invalide (ex. `"port": "abc"`).
 
 ---
 
@@ -122,3 +122,27 @@ Features SQL — clientul doar pasează string-ul mai departe, deci le adaugi or
 - **Semantic versioning pe pachete** legat de versiunea de protocol (ex. pachet `1.x` ↔ `NEXDB/1`).
 - **Timeout & reconnect automat** în client (mai ales pentru `SWITCH` la `USE DATABASE`).
 - **CI simplu** (GitHub Actions) care rulează `tests/` la fiecare push — înainte să depinzi de pachete.
+
+### Inconsistențe reale
+- **CREATE TABLE no-op silențios** — asta e bug. Catalog::createTable (Catalog/Catalog.cpp:23-24) face return fără nimic dacă numele există sau dacă lista de coloane e goală, iar serverul răspunde {"type":"ok"}. Se comportă ca IF NOT EXISTS fără ca cineva să fi cerut asta, și e asimetric față de DROP TABLE care aruncă eroare (Engine.cpp:69). Clientul nu poate distinge "am creat tabelul" de "exista deja cu altă schemă".
+- **BOOLEAN/TEXT** — inconsistență internă: Table::validateValueForType le acceptă, parserul le respinge. Cod mort, nu bug funcțional.
+
+### Bug-uri adevărate în NetworkServer.cpp
+   Fiindcă tot revii la fișierul ăsta — astea sunt problemele reale din el:
+   
+- **Query-uri pipeline-uite se pierd silențios.** handleClient creează un streambuf nou la fiecare apel (NetworkServer.cpp:273). async_read_until citește frecvent dincolo de delimitator, deci dacă clientul trimite CREATE TABLE ...\nINSERT ...\n într-un singur send(), al doilea statement rămâne în buffer-ul vechi și dispare când shared_ptr moare la recursie (NetworkServer.cpp:288). Zero eroare, zero răspuns. Asta e direct relevant pentru întrebarea ta inițială. Fix: mută buffer-ul în afara recursiei și consumă liniile rămase înainte de a re-arma citirea.
+
+- **Excepții care omoară procesul.** run() pornește thread-uri de pool cu io_context.run() gol, fără try/catch (NetworkServer.cpp:171-174). Iar în handler-ul de accept:
+   •
+   socket.remote_endpoint() (:242) aruncă dacă peer-ul s-a deconectat între accept și apel
+   •
+   toate asio::write din :244, :247, :122, :132, :153, :163 sunt overload-uri care aruncă asio::system_error
+   Orice client care închide socket-ul în timpul handshake-ului aruncă o excepție care iese din handler, iese din run() și, pe un thread de pool, dă std::terminate. Pe thread-ul principal e prinsă în GUI (GUI.cpp:61), dar acceptConnections() nu se mai re-armează niciodată — serverul încetează să accepte conexiuni fără să spună nimic.
+
+- **Comentariul de la linia 134 minte.** Zice "synchronous, with 5s timeout via deadline" — nu există niciun timeout. handleHandshake face I/O blocant sincron pe un thread de io_context, deci o conexiune care nu trimite nimic blochează thread-ul pe termen nelimitat. Cu thread_count: 4, patru conexiuni deschise și mute îngheață tot serverul, inclusiv accept-ul.
+
+- **Token-ul auth generat nu ajunge niciodată în log.** prepare() e apelat la GUI.cpp:45, dar setLogCallback abia la :51. Toate log-urile din loadOrCreateSecret() — inclusiv "Generated auth token: ..." (NetworkServer.cpp:97) — se duc într-un logCallback gol. Token-ul ajunge doar în server_auth.conf.
+
+- **Race pe logs.** GUI.cpp:48, :55 și :73 fac push_back fără logsMutex, în timp ce thread-urile de io scriu sub lock — deci lock-ul nu protejează nimic acolo.
+
+- **Minore**: rateLimitMap crește nelimitat (o intrare per IP, niciodată curățată); async_read_until pe streambuf fără limită de mărime; comparația auth de la :149 nu e constant-time; stop() apelează acceptor.close() din thread-ul GUI cât timp thread-urile de io folosesc acceptor-ul, ceea ce nu e thread-safe în asio (ar trebui prin asio::post).

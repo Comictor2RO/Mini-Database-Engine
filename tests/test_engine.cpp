@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "../Engine/Engine.hpp"
 #include <cstdio>
+#include <filesystem>
 
 class EngineTest : public ::testing::Test {
 protected:
@@ -24,6 +25,10 @@ protected:
         std::remove(catFile.c_str());
         std::remove(dbFile.c_str());
         std::remove(walFile.c_str());
+
+        //CREATE/DROP DATABASE work under databases/, so clean those up too
+        for (const char *ext : {".db", ".cat", ".wal"})
+            std::filesystem::remove("databases/eng_dropdb" + std::string(ext));
     }
 };
 
@@ -166,4 +171,44 @@ TEST_F(EngineTest, CatalogPersistsAcrossEngineInstances) {
     auto results = engine->query("SELECT * FROM eng_orders");
     ASSERT_EQ(results.size(), 1);
     EXPECT_EQ(results[0].values[1], "100");
+}
+
+//Test 12: DROP DATABASE deletes the files CREATE DATABASE made
+TEST_F(EngineTest, DropDatabaseRemovesFiles) {
+    engine->query("CREATE DATABASE eng_dropdb");
+    ASSERT_TRUE(std::filesystem::exists("databases/eng_dropdb.db"));
+    ASSERT_TRUE(std::filesystem::exists("databases/eng_dropdb.cat"));
+
+    EXPECT_NO_THROW(engine->query("DROP DATABASE eng_dropdb"));
+
+    EXPECT_FALSE(std::filesystem::exists("databases/eng_dropdb.db"));
+    EXPECT_FALSE(std::filesystem::exists("databases/eng_dropdb.cat"));
+}
+
+//Test 13: DROP DATABASE on a database that does not exist errors instead of reporting ok
+TEST_F(EngineTest, DropMissingDatabaseThrows) {
+    EXPECT_THROW(engine->query("DROP DATABASE eng_no_such_db"), std::runtime_error);
+}
+
+//Test 14: DROP DATABASE refuses the active database, whose files are still open
+TEST_F(EngineTest, DropActiveDatabaseThrows) {
+    try {
+        //The fixture opens test_engine.db, so the active database is "test_engine"
+        engine->query("DROP DATABASE test_engine");
+        FAIL() << "Expected the active-database guard to reject this";
+    } catch (const std::runtime_error &e) {
+        //Assert on the message: without the guard this would still throw, but
+        //from the existence check, which would pass the test for the wrong reason
+        EXPECT_NE(std::string(e.what()).find("currently active"), std::string::npos);
+    }
+}
+
+//Test 15: the active-database guard ignores case, since Windows filenames do too
+TEST_F(EngineTest, DropActiveDatabaseGuardIgnoresCase) {
+    try {
+        engine->query("DROP DATABASE Test_Engine");
+        FAIL() << "Expected the active-database guard to reject a differently-cased name";
+    } catch (const std::runtime_error &e) {
+        EXPECT_NE(std::string(e.what()).find("currently active"), std::string::npos);
+    }
 }
