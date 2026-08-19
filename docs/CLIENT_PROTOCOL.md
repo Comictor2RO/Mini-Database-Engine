@@ -404,7 +404,7 @@ not present result order as stable.
 
 `DELETE FROM t` with no `WHERE` deletes every row.
 
-### 7.8 CREATE DATABASE and DROP DATABASE are refused over the network
+### 7.8 CREATE DATABASE and DROP DATABASE are refused over the network by default
 
 Both statements parse normally. The refusal happens in `Engine::query`, after the parse and
 before any execution, on the statement type:
@@ -418,9 +418,15 @@ Because the check reads the AST and not the query text, no spelling gets around 
 error. Nothing is created, deleted or switched, and the error is an ordinary error frame — the
 connection stays open and usable (§4).
 
-A client should reject both statements up front with its own message rather than round-trip
-them, but it must still handle the server's error: a hand-written query, or an older client
-against a newer server, will hit it.
+**This is a server setting, not a protocol rule.** `allow_remote_db_admin` in `config.json`
+(§9) defaults to `false`, and an operator can set it to `true`, at which point both statements
+succeed with `{"type": "ok"}` and behave exactly as described at the end of this section. A
+client cannot detect which way it is configured except by trying, and there is no capability
+negotiation in the handshake.
+
+So do not hard-code either assumption. Rejecting both statements client-side is reasonable as a
+default, but make it overridable rather than absolute, and handle the server's error in any
+case: a hand-written query, or an older client against a newer server, will hit it.
 
 **The in-process GUI can still issue both**, on the same engine. So a database can appear or
 disappear underneath a connected client without any query of its own — the same class of
@@ -497,13 +503,15 @@ the messages are not part of the versioned protocol.
 
 ## 9. Server config that clients can observe
 
-`config.json`, read once at startup from the executable's working directory. A malformed
-value aborts the process at launch, so a running server always has valid values.
+`config.json`, read once at startup from the executable's working directory. A malformed value
+— or an unrecognised key — aborts the process at launch, so a running server always has valid
+values, and a mistyped key is never silently ignored.
 
 | Key | Default | Range | Client-visible effect |
 |---|---|---|---|
 | `port` | 3000 | 1–65535 | where to connect |
 | `bypass_localhost` | `true` | bool | whether localhost skips auth |
+| `allow_remote_db_admin` | `false` | bool | whether `CREATE DATABASE` / `DROP DATABASE` are accepted (§7.8) |
 | `aux_max_failures` | 3 | > 0 | failed auths before ban |
 | `aux_timeout` | 30 | > 0 | ban seconds |
 | `thread_count` | 4 | > 0 | accepted concurrent connections (execution still serialized) |

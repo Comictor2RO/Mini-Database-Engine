@@ -11,6 +11,7 @@ struct Config {
     int aux_timeout = 30;
     int thread_count = 4;
     bool bypass_localhost = true;
+    bool allow_remote_db_admin = false;
     std::string database = "mydb";
 
     static Config load(const std::string& path = "config.json");

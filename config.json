@@ -6,5 +6,6 @@
   "aux_timeout": 30,
   "thread_count": 4,
   "bypass_localhost": true,
+  "allow_remote_db_admin": false,
   "database": "mydb"
 }

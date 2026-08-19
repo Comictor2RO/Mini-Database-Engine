@@ -148,6 +148,7 @@ NexDB reads `config.json` from the same directory as the executable at startup. 
   "aux_timeout": 30,
   "thread_count": 4,
   "bypass_localhost": true,
+  "allow_remote_db_admin": false,
   "database": "mydb"
 }
 ```
@@ -161,7 +162,11 @@ NexDB reads `config.json` from the same directory as the executable at startup. 
 | `aux_timeout` | `30` | Ban duration in seconds |
 | `thread_count` | `4` | Number of threads in the ASIO I/O thread pool |
 | `bypass_localhost` | `true` | Skip the auth handshake for `127.0.0.1` / `::1` connections |
+| `allow_remote_db_admin` | `false` | Let network clients run `CREATE DATABASE` / `DROP DATABASE`. Off by default; the GUI is unaffected either way |
 | `database` | `"mydb"` | Active database name (files stored in `databases/`) |
+
+An **unknown key aborts startup** rather than being ignored, so a typo cannot silently leave a
+setting at its default. The error names the offending key.
 
 ---
 

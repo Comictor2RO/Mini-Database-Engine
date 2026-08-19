@@ -48,8 +48,8 @@ static std::string jsonEscape(const std::string &s) {
     return out.str();
 }
 
-NetworkServer::NetworkServer(Engine &engine, int port, int maxFailures, int banSeconds, bool bypassLocalhost, int numThreads)
-    : engine(engine), acceptor(io_context), configPort(port), maxFailures(maxFailures), banSeconds(banSeconds), bypassLocalhost(bypassLocalhost), numThreads(numThreads)
+NetworkServer::NetworkServer(Engine &engine, int port, int maxFailures, int banSeconds, bool bypassLocalhost, int numThreads, bool allowRemoteDbAdmin)
+    : engine(engine), acceptor(io_context), configPort(port), maxFailures(maxFailures), banSeconds(banSeconds), bypassLocalhost(bypassLocalhost), numThreads(numThreads), allowRemoteDbAdmin(allowRemoteDbAdmin)
 {};
 
 void NetworkServer::prepare()
@@ -302,7 +302,7 @@ std::string NetworkServer::executeQuery(std::string &query)
         std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
         if (logCallback) logCallback("[QUERY] " + upper + " — " + query);
 
-        std::vector<Row> rows = engine.query(query, false);
+        std::vector<Row> rows = engine.query(query, allowRemoteDbAdmin);
 
         std::string pending = engine.consumePendingSwitch();
         if (!pending.empty())

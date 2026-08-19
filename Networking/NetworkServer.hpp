@@ -34,7 +34,7 @@ struct RateLimitEntry {
 
 class NetworkServer {
     public:
-        NetworkServer(Engine &engine, int port = 0, int maxFailures = 3, int banSeconds = 30, bool bypassLocalhost = true, int numThreads = 4);
+        NetworkServer(Engine &engine, int port = 0, int maxFailures = 3, int banSeconds = 30, bool bypassLocalhost = true, int numThreads = 4, bool allowRemoteDbAdmin = false);
 
         static constexpr const char* PROTOCOL_VERSION = "NEXDB/1.0.0";
 
@@ -50,6 +50,7 @@ class NetworkServer {
         int maxFailures;
         int banSeconds;
         bool bypassLocalhost;
+        bool allowRemoteDbAdmin;
         size_t port = 0;
         asio::io_context io_context;
         tcp::acceptor acceptor;

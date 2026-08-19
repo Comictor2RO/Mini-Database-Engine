@@ -73,8 +73,7 @@ Config Config::load(const std::string &path)
             config.database = val;
             continue;
         }
-
-        if (key == "bypass_localhost") {
+        else if (key == "bypass_localhost") {
             if (val != "true" && val != "false" && val != "1" && val != "0")
                 throw std::runtime_error(
                     "Invalid config value for 'bypass_localhost': '" + val +
@@ -82,14 +81,20 @@ Config Config::load(const std::string &path)
             config.bypass_localhost = (val == "true" || val == "1");
             continue;
         }
-
-        if (key == "port") {
+        else if (key == "allow_remote_db_admin") {
+            if (val != "true" && val != "false" && val != "1" && val != "0")
+                throw std::runtime_error("Invalid value for 'allow_remote_db_admin': '" + val + "' must be true or false");
+            config.allow_remote_db_admin = (val == "true" || val == "1");
+            continue;
+        }
+        else if (key == "port") {
             int n = parseInt(key, val);
             if (n < 1 || n > 65535)
                 throw std::runtime_error(
                     "Invalid config value for 'port': " + std::to_string(n) +
                     " must be between 1 and 65535");
             config.port = n;
+            continue;
         }
         else if (key == "page_size")
             config.page_size = parsePositive(key, val);
@@ -101,6 +106,8 @@ Config Config::load(const std::string &path)
             config.aux_timeout = parsePositive(key, val);
         else if (key == "thread_count")
             config.thread_count = parsePositive(key, val);
+        else
+            throw std::runtime_error("Invalid config key: '" + key + "'");
     }
 
     return config;

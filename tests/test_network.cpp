@@ -56,7 +56,7 @@ protected:
         // Databases the CREATE/DROP DATABASE tests touch. Removed up front so a
         // leftover file from an earlier run cannot make those tests pass or fail
         // for the wrong reason. Missing files are a no-op.
-        for (const char *name : {"net_evil", "net_localadmin"})
+        for (const char *name : {"net_evil", "net_localadmin", "net_flagallow"})
             for (const char *ext : {".db", ".cat", ".wal"})
                 std::remove((std::string("databases/") + name + ext).c_str());
     }
@@ -380,4 +380,44 @@ TEST_F(NetworkServerTest, LocalCallerMayStillAdministerDatabases) {
 
     EXPECT_NO_THROW(engine->query("DROP DATABASE net_localadmin"));
     EXPECT_FALSE(std::filesystem::exists("databases/net_localadmin.db"));
+}
+
+// Test 18: allow_remote_db_admin = true opens the door again, so the block is genuinely
+// driven by the flag and not by something else on the path. Uses its own server, with the
+// localhost bypass on to keep the exchange to banner + AUTH OK.
+TEST_F(NetworkServerTest, AllowFlagLetsRemoteClientsAdministerDatabases) {
+    // Inner scope so the engine is destroyed — and its files closed — before they are
+    // removed. Deleting first and letting the destructor run afterwards just recreates
+    // them, which is why earlier runs left test_network2.db behind.
+    {
+        Engine adminEngine(128, "test_netadmin.db", "test_netadmin.cat", "test_netadmin.wal");
+        NetworkServer adminServer(adminEngine, 0, 3, 30, true, 4, /*allowRemoteDbAdmin=*/true);
+        adminServer.prepare();
+        std::thread adminThread([&]() { adminServer.run(); });
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        asio::io_context ctx;
+        tcp::socket sock(ctx);
+        tcp::resolver resolver(ctx);
+        asio::connect(sock, resolver.resolve("127.0.0.1", std::to_string(adminServer.getPort())));
+
+        asio::streambuf buf;
+        readLine(sock, buf);                          // banner
+        ASSERT_EQ(readLine(sock, buf), "AUTH OK");    // localhost bypass
+
+        asio::write(sock, asio::buffer(std::string("CREATE DATABASE net_flagallow\n")));
+        EXPECT_EQ(readLine(sock, buf), "{\"type\": \"ok\"}");
+        EXPECT_TRUE(std::filesystem::exists("databases/net_flagallow.db"));
+
+        asio::write(sock, asio::buffer(std::string("DROP DATABASE net_flagallow\n")));
+        EXPECT_EQ(readLine(sock, buf), "{\"type\": \"ok\"}");
+        EXPECT_FALSE(std::filesystem::exists("databases/net_flagallow.db"));
+
+        adminServer.stop();
+        adminThread.join();
+    }
+
+    std::remove("test_netadmin.db");
+    std::remove("test_netadmin.cat");
+    std::remove("test_netadmin.wal");
 }

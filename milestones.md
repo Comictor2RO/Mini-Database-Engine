@@ -146,3 +146,16 @@ Features SQL — clientul doar pasează string-ul mai departe, deci le adaugi or
 - **Race pe logs.** GUI.cpp:48, :55 și :73 fac push_back fără logsMutex, în timp ce thread-urile de io scriu sub lock — deci lock-ul nu protejează nimic acolo.
 
 - **Minore**: rateLimitMap crește nelimitat (o intrare per IP, niciodată curățată); async_read_until pe streambuf fără limită de mărime; comparația auth de la :149 nu e constant-time; stop() apelează acceptor.close() din thread-ul GUI cât timp thread-urile de io folosesc acceptor-ul, ceea ce nu e thread-safe în asio (ar trebui prin asio::post).
+
+### Opțional: să fie configurabil
+Dacă vrei switch în config.json în loc de hardcodat:
+
+- **Config/Config.hpp:13** — adaugi bool allow_remote_db_admin = false;
+
+- **Config/Config.cpp** — parse + validare, în stilul celorlalte bool-uri (bypass_localhost)
+
+- **NetworkServer.hpp:37** — parametru nou în ctor + membru privat lângă bypassLocalhost (linia 52)
+
+- **GUI/GUI.cpp:6** — pasezi config.allow_remote_db_admin
+
+- **NetworkServer.cpp:305** — engine.query(query, allowRemoteDbAdmin)
