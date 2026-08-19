@@ -268,7 +268,7 @@ void Engine::executeUseDatabase(const UseDatabaseStatement &stmt)
     pendingSwitch = stmt.getName();
 }
 
-std::vector<Row> Engine::query(const std::string &sql)
+std::vector<Row> Engine::query(const std::string &sql, bool allowDatabaseAdmin)
 {
     Lexer lexer(sql);
     std::vector<Token> tokens = lexer.tokenize();
@@ -285,6 +285,9 @@ std::vector<Row> Engine::query(const std::string &sql)
 
     if (!stmt)
         throw std::runtime_error("Invalid SQL query");
+
+    if (!allowDatabaseAdmin && (dynamic_cast<CreateDatabaseStatement*>(stmt.get()) || dynamic_cast<DropDatabaseStatement*>(stmt.get())))
+        throw std::runtime_error("CREATE DATABASE/DROP DATABASE is not permitted for remote clients");
 
     if (SelectStatement *s = dynamic_cast<SelectStatement*>(stmt.get()))
     {

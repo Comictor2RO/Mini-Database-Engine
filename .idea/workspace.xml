@@ -36,18 +36,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1a0129cb-ae6e-4fd4-8ac8-32f8a7cadcb5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Engine/Engine.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Engine/Engine.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Engine/Engine.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/Engine/Engine.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/Parser/Parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/Parser/Parser.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/Parser/Parser.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/Parser/Parser.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/GUI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/GUI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/milestones.md" beforeDir="false" afterPath="$PROJECT_DIR$/milestones.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_engine.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_engine.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_parser.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Networking/NetworkServer.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Networking/NetworkServer.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/CLIENT_PROTOCOL.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CLIENT_PROTOCOL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_network.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_network.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +56,7 @@
     <option name="debugProfileId" value="61cf5273-1ce1-4188-ad73-94623220e73d" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="148" />
+    <option name="cachedIndexableFilesCount" value="150" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
@@ -77,61 +72,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.9080504583360016" />
-      <entry key="MS500" value="5.133223350969776" />
-      <entry key="S2" value="13.754531132033607" />
-      <entry key="S5" value="24.61131454812277" />
-      <entry key="S10" value="35.17542926819142" />
-      <entry key="S30" value="50.1449894800697" />
-      <entry key="S60" value="58.65123885635846" />
-      <entry key="M2" value="72.07455745409739" />
-      <entry key="M5" value="111.3434398174733" />
-      <entry key="M10" value="182.73161191198835" />
-      <entry key="M15" value="252.44720860643758" />
-      <entry key="M30" value="444.81324394569947" />
-      <entry key="H1" value="841.6593136803584" />
-      <entry key="H2" value="1629.7917596960417" />
-      <entry key="H4" value="2828.8288866011835" />
-      <entry key="D1" value="5426.508484318506" />
-      <entry key="W1" value="6194.883026499111" />
+      <entry key="MS100" value="1.442306587321398" />
+      <entry key="MS500" value="3.4059876115801004" />
+      <entry key="S2" value="8.721256786544831" />
+      <entry key="S5" value="15.592739509163975" />
+      <entry key="S10" value="21.935027649425546" />
+      <entry key="S30" value="29.49602156699401" />
+      <entry key="S60" value="32.251682351938435" />
+      <entry key="M2" value="36.30041959535826" />
+      <entry key="M5" value="63.88558588835671" />
+      <entry key="M10" value="132.62859676922676" />
+      <entry key="M15" value="207.18097553493143" />
+      <entry key="M30" value="424.0553288617775" />
+      <entry key="H1" value="839.3047642324854" />
+      <entry key="H2" value="1641.467675084855" />
+      <entry key="H4" value="2892.98642810354" />
+      <entry key="D1" value="5732.427682630521" />
+      <entry key="W1" value="6597.878307300021" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
-      <entry key="S2" value="1.9615786702666973E-118" />
-      <entry key="S5" value="8.261183941795298E-48" />
-      <entry key="S10" value="2.8742275382779277E-24" />
-      <entry key="S30" value="1.4218061489851376E-8" />
-      <entry key="S60" value="1.1926212570485589E-4" />
-      <entry key="M2" value="0.011175084264386867" />
-      <entry key="M5" value="0.2345043809430413" />
-      <entry key="M10" value="0.8646329447843912" />
-      <entry key="M15" value="1.4153939654921746" />
-      <entry key="M30" value="2.707917582162596" />
-      <entry key="H1" value="5.9018835241416765" />
-      <entry key="H2" value="12.088772813584328" />
-      <entry key="H4" value="19.064002415108366" />
-      <entry key="D1" value="29.227990462747897" />
-      <entry key="W1" value="31.585129148992024" />
+      <entry key="S2" value="2.0731337327274985E-93" />
+      <entry key="S5" value="8.471136074810151E-38" />
+      <entry key="S10" value="3.1713319660279946E-19" />
+      <entry key="S30" value="1.3805067438377755E-6" />
+      <entry key="S60" value="0.0024991249100345886" />
+      <entry key="M2" value="0.11051683305156623" />
+      <entry key="M5" value="1.0861294796914736" />
+      <entry key="M10" value="2.3722706013973944" />
+      <entry key="M15" value="3.196878348758446" />
+      <entry key="M30" value="4.874966295812935" />
+      <entry key="H1" value="7.987610312888533" />
+      <entry key="H2" value="14.114106009441281" />
+      <entry key="H4" value="21.674269981605004" />
+      <entry key="D1" value="33.60091247958442" />
+      <entry key="W1" value="36.48779133916482" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.8526151984473165" />
-      <entry key="MS500" value="5.100603449698937" />
-      <entry key="S2" value="13.733428216486724" />
-      <entry key="S5" value="24.59630988304664" />
-      <entry key="S10" value="35.16471392835832" />
-      <entry key="S30" value="50.13988275411208" />
-      <entry key="S60" value="58.6477566166523" />
-      <entry key="M2" value="72.07822619245393" />
-      <entry key="M5" value="111.55272501517415" />
-      <entry key="M10" value="183.56245830772716" />
-      <entry key="M15" value="253.82960133728363" />
-      <entry key="M30" value="447.4948443413299" />
-      <entry key="H1" value="847.5399806276723" />
-      <entry key="H2" value="1641.8623656574653" />
-      <entry key="H4" value="2847.8788401222823" />
-      <entry key="D1" value="5455.732665043332" />
-      <entry key="W1" value="6226.467556342358" />
+      <entry key="MS100" value="1.3868547799490245" />
+      <entry key="MS500" value="3.381838153027336" />
+      <entry key="S2" value="8.706459824508379" />
+      <entry key="S5" value="15.582284863734289" />
+      <entry key="S10" value="21.927686592762356" />
+      <entry key="S30" value="29.49272345171195" />
+      <entry key="S60" value="32.251178985108304" />
+      <entry key="M2" value="36.39662859133714" />
+      <entry key="M5" value="64.93017287794564" />
+      <entry key="M10" value="134.95642194258846" />
+      <entry key="M15" value="210.33678430735392" />
+      <entry key="M30" value="428.89698758423276" />
+      <entry key="H1" value="847.2660531549454" />
+      <entry key="H2" value="1655.5604501655741" />
+      <entry key="H4" value="2914.6445892683937" />
+      <entry key="D1" value="5766.024228814318" />
+      <entry key="W1" value="6634.36540998594" />
     </decayedShown>
   </component>
   <component name="ProjectApplicationVersion">
@@ -149,48 +144,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;CMake Application.NexDB.executor&quot;: &quot;Run&quot;,
-    &quot;CidrDebugProfileConversion&quot;: &quot;true&quot;,
-    &quot;Google Test.tests.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;ctest.advertisement.all.test.configuration.is.created&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/comic/Desktop/Proiecte Weekend/NexDB&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "CMake Application.NexDB.executor": "Run",
+    "CidrDebugProfileConversion": "true",
+    "Google Test.tests.executor": "Run",
+    "KEY_CHAT_IN_TOOLWINDOW": "false",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "RunOnceActivity.west.config.association.type.startup.service": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "ctest.advertisement.all.test.configuration.is.created": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "C:/Users/comic/Desktop/Proiecte Weekend/NexDB",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="CMake Application.NexDB">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="tests" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="NexDB" TARGET_NAME="tests" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="NexDB" RUN_TARGET_NAME="tests" TEST_MODE="SUITE_TEST">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -198,6 +189,11 @@
       </method>
     </configuration>
     <configuration name="NexDB" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="NexDB" TARGET_NAME="NexDB" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="NexDB" RUN_TARGET_NAME="NexDB">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -244,25 +240,25 @@
       <item itemvalue="Google Test.tests" />
     </list>
   </component>
-  <component name="SelectedDebugProfileService"><![CDATA[{
-  "profileIdByStamp": [
+  <component name="SelectedDebugProfileService">{
+  &quot;profileIdByStamp&quot;: [
     {
-      "first": {
-        "##RUN_CONFIGURATION##": "CMake Application.NexDB",
-        "cmake": "CMakeBuildProfile:Debug"
+      &quot;first&quot;: {
+        &quot;##RUN_CONFIGURATION##&quot;: &quot;CMake Application.NexDB&quot;,
+        &quot;cmake&quot;: &quot;CMakeBuildProfile:Debug&quot;
       },
-      "second": "61cf5273-1ce1-4188-ad73-94623220e73d"
+      &quot;second&quot;: &quot;61cf5273-1ce1-4188-ad73-94623220e73d&quot;
     },
     {
-      "first": {
-        "##RUN_CONFIGURATION##": "Google Test.tests",
-        "cmake": "CMakeBuildProfile:Debug"
+      &quot;first&quot;: {
+        &quot;##RUN_CONFIGURATION##&quot;: &quot;Google Test.tests&quot;,
+        &quot;cmake&quot;: &quot;CMakeBuildProfile:Debug&quot;
       },
-      "second": "61cf5273-1ce1-4188-ad73-94623220e73d"
+      &quot;second&quot;: &quot;61cf5273-1ce1-4188-ad73-94623220e73d&quot;
     }
   ],
-  "modificationCount": 8
-}]]></component>
+  &quot;modificationCount&quot;: 8
+}</component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="1a0129cb-ae6e-4fd4-8ac8-32f8a7cadcb5" name="Changes" comment="" />
@@ -301,7 +297,8 @@
       <workItem from="1786790585374" duration="606000" />
       <workItem from="1786806693671" duration="496000" />
       <workItem from="1786879376728" duration="1438000" />
-      <workItem from="1787055531894" duration="3626000" />
+      <workItem from="1787055531894" duration="3737000" />
+      <workItem from="1787139351126" duration="2898000" />
     </task>
     <servers />
   </component>

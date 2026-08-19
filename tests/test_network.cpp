@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdio>
 #include <sstream>
+#include <filesystem>
 
 // Reads one '\n'-terminated line from the socket, reusing `buf` across calls so
 // that bytes from a combined TCP segment (e.g. banner + CHALLENGE arriving
@@ -51,6 +52,13 @@ protected:
         std::remove("test_network.db");
         std::remove("test_network.wal");
         std::remove("server_auth.conf");
+
+        // Databases the CREATE/DROP DATABASE tests touch. Removed up front so a
+        // leftover file from an earlier run cannot make those tests pass or fail
+        // for the wrong reason. Missing files are a no-op.
+        for (const char *name : {"net_evil", "net_localadmin"})
+            for (const char *ext : {".db", ".cat", ".wal"})
+                std::remove((std::string("databases/") + name + ext).c_str());
     }
 
     // Connects, completes challenge-response with correct token, sends SQL, returns response
@@ -311,4 +319,65 @@ TEST_F(NetworkServerTest, ServerSendsProtocolBanner) {
     asio::streambuf discard;
     asio::error_code ec;
     asio::read_until(sock, discard, "\n", ec);
+}
+
+// --- New tests: CREATE/DROP DATABASE are refused for remote clients ---
+
+// Test 15: every spelling is refused, and no file is created or deleted.
+// The variants matter: the check runs on the parsed AST, not on the query text,
+// so case and whitespace cannot get around it.
+TEST_F(NetworkServerTest, DatabaseAdminIsRefusedForRemoteClients) {
+    const char *queries[] = {
+        "CREATE DATABASE net_evil",
+        "create database net_evil",
+        "   CrEaTe   DaTaBaSe   net_evil",
+        "DROP DATABASE test_network",
+        "drop   database   test_network"
+    };
+
+    for (const char *query : queries) {
+        std::string response = sendQuery(query);
+        EXPECT_NE(response.find("\"type\": \"error\""), std::string::npos) << query;
+        EXPECT_NE(response.find("is not permitted for remote clients"), std::string::npos) << query;
+    }
+
+    EXPECT_FALSE(std::filesystem::exists("databases/net_evil.db"));
+    EXPECT_TRUE(std::filesystem::exists("test_network.db"));
+}
+
+// Test 16: the refusal is an ordinary error frame, not a fatal one — the *same* socket
+// keeps working afterwards. Done inline rather than through sendQuery(), which opens a
+// fresh connection per call and so could not tell a surviving socket from a new one.
+TEST_F(NetworkServerTest, RefusedDatabaseAdminKeepsSameConnectionUsable) {
+    asio::io_context ctx;
+    tcp::socket sock(ctx);
+    tcp::resolver resolver(ctx);
+    asio::connect(sock, resolver.resolve("127.0.0.1", std::to_string(server->getPort())));
+
+    asio::streambuf buf;
+    readLine(sock, buf);                                 // banner
+    std::string challengeLine = readLine(sock, buf);     // CHALLENGE <nonce>
+    std::string nonce = challengeLine.substr(std::string("CHALLENGE ").size());
+
+    std::string authMsg = "AUTH " + picosha2::hash256_hex_string(server->getAuthToken() + nonce) + "\n";
+    asio::write(sock, asio::buffer(authMsg));
+    ASSERT_EQ(readLine(sock, buf), "AUTH OK");
+
+    asio::write(sock, asio::buffer(std::string("CREATE DATABASE net_evil\n")));
+    std::string refusal = readLine(sock, buf);
+    EXPECT_NE(refusal.find("is not permitted for remote clients"), std::string::npos);
+
+    // No reconnect between the two writes
+    asio::write(sock, asio::buffer(std::string("SELECT * FROM net_users\n")));
+    std::string rows = readLine(sock, buf);
+    EXPECT_NE(rows.find("Alice"), std::string::npos);
+}
+
+// Test 17: the block is remote-only — the in-process (GUI) caller still gets both
+TEST_F(NetworkServerTest, LocalCallerMayStillAdministerDatabases) {
+    EXPECT_NO_THROW(engine->query("CREATE DATABASE net_localadmin"));
+    EXPECT_TRUE(std::filesystem::exists("databases/net_localadmin.db"));
+
+    EXPECT_NO_THROW(engine->query("DROP DATABASE net_localadmin"));
+    EXPECT_FALSE(std::filesystem::exists("databases/net_localadmin.db"));
 }

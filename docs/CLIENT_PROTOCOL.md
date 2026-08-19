@@ -150,7 +150,7 @@ Every response is **exactly one line of JSON** terminated by `\n`. Four shapes, 
 
 | `type` | Emitted for | Payload |
 |---|---|---|
-| `ok` | INSERT, UPDATE, DELETE, CREATE TABLE, DROP TABLE, CREATE DATABASE, DROP DATABASE | — |
+| `ok` | INSERT, UPDATE, DELETE, CREATE TABLE, DROP TABLE | — |
 | `rows` | SELECT (including a SELECT matching nothing) | `columns`, `rows` |
 | `switch` | USE / USE DATABASE | `db` |
 | `error` | any failure | `message` |
@@ -285,8 +285,8 @@ The encoding is internal — values round-trip, so a client never sees percent-e
 ```
 CREATE TABLE <table> (<col> <TYPE> [, <col> <TYPE>]*)
 DROP TABLE <table>
-CREATE DATABASE <name>
-DROP DATABASE <name>
+CREATE DATABASE <name>        -- parses, then refused for remote clients (§7.8)
+DROP DATABASE <name>          -- parses, then refused for remote clients (§7.8)
 USE [DATABASE] <name>
 
 INSERT INTO <table> [(<col>[, <col>]*)] VALUES (<val>[, <val>]*)
@@ -404,27 +404,36 @@ not present result order as stable.
 
 `DELETE FROM t` with no `WHERE` deletes every row.
 
-### 7.8 DROP DATABASE deletes files and refuses the active database
+### 7.8 CREATE DATABASE and DROP DATABASE are refused over the network
 
-`Engine::executeDropDatabase` removes `databases/<name>.db`, `.cat` and `.wal` from disk.
-There is no recycle bin and no WAL record for it — the operation is not replayed on
-recovery and cannot be rolled back.
+Both statements parse normally. The refusal happens in `Engine::query`, after the parse and
+before any execution, on the statement type:
 
-Two guards, in this order:
+```json
+{"type": "error", "message": "CREATE DATABASE/DROP DATABASE is not permitted for remote clients"}
+```
 
-1. **The active database cannot be dropped.** Its files are held open by the engine's
-   storage, catalog and WAL handles, so the delete would fail on Windows and silently
-   unlink into a ghost file on Linux. The check is case-insensitive, because a
-   differently-cased name resolves to the same file on NTFS.
-2. **A missing database errors** rather than reporting success — unlike `CREATE TABLE`
-   (§7.5), this one is not idempotent. There is no `IF EXISTS`.
+Because the check reads the AST and not the query text, no spelling gets around it:
+`CREATE DATABASE x`, `create database x` and `   CrEaTe   DaTaBaSe   x` all produce that same
+error. Nothing is created, deleted or switched, and the error is an ordinary error frame — the
+connection stays open and usable (§4).
 
-Since `USE` is process-global (§7.6), "the active database" is server state, not
-connection state: whether a `DROP DATABASE` succeeds can depend on a `USE` another client
-issued. A client cannot predict it locally — surface the server's error instead.
+A client should reject both statements up front with its own message rather than round-trip
+them, but it must still handle the server's error: a hand-written query, or an older client
+against a newer server, will hit it.
 
-Files are deleted in the order `.wal`, `.cat`, `.db`, so a partial failure leaves the
-`.db` in place and the statement can be retried.
+**The in-process GUI can still issue both**, on the same engine. So a database can appear or
+disappear underneath a connected client without any query of its own — the same class of
+surprise as `USE` in §7.6. A client cannot treat the set of databases as stable, and the
+protocol offers no way to enumerate them anyway.
+
+For the record, the local semantics the block hides from clients: `CREATE DATABASE` is
+idempotent — it creates `databases/<name>.db` and `.cat` only if absent and never errors.
+`DROP DATABASE` deletes `.wal`, `.cat`, `.db` in that order (a partial failure leaves the
+`.db` in place, so the statement can be retried), refuses the currently active database
+case-insensitively, and errors on a missing one. It writes no WAL record, so it is never
+replayed on recovery and cannot be rolled back. None of it is reachable from a client, which
+also makes three of the engine's error messages unreachable (§8).
 
 ---
 
@@ -456,9 +465,7 @@ An empty line yields `Parse error: Missing required keyword`.
 Table <name> does not exist
 Column <name> does not exist in table <table>
 Database '<name>' does not exist (use CREATE DATABASE first)
-Database '<name>' does not exist
-Cannot drop the currently active database '<name>' (USE another database first)
-Failed to delete database '<name>': <.ext> is in use
+CREATE DATABASE/DROP DATABASE is not permitted for remote clients
 Invalid SQL query
 Insert failed for table <name>: Column count mismatch (expected N columns)
 Insert failed for table <name>: Type validation failed (invalid value for column type)
@@ -466,8 +473,18 @@ Insert failed for table <name>: Page manager full (disk space or page limit reac
 Insert failed for table <name>: Index insertion failed (B+Tree error)
 ```
 
-The two `Database '<name>' does not exist` variants are not a typo: `USE` appends
-`(use CREATE DATABASE first)`, `DROP DATABASE` does not. Another reason not to match on
+Three more exist in `Engine.cpp` but no client can ever observe them, because they are raised
+inside `executeDropDatabase`, which the network path refuses before reaching (§7.8):
+
+```
+Database '<name>' does not exist
+Cannot drop the currently active database '<name>' (USE another database first)
+Failed to delete database '<name>': <.ext> is in use
+```
+
+Note the first of those: `Engine.cpp` has two near-identical `Database '<name>' does not exist`
+messages, and only the `USE` one — which appends `(use CREATE DATABASE first)` — is reachable
+from a client. The bare variant belongs to `DROP DATABASE`. Another reason not to match on
 these strings.
 
 Plus anything thrown from the storage layer, e.g.
@@ -525,7 +542,8 @@ Worth surfacing in the client's own docs, because they will surprise users:
 - [ ] Negative numbers are silently stripped of their sign by the lexer
 - [ ] The `INSERT` column list is ignored — values are positional
 - [ ] `USE` affects every connected client
-- [ ] `DROP DATABASE` deletes files irreversibly and refuses the active database
+- [ ] `CREATE DATABASE` / `DROP DATABASE` are refused by the server, not only by the client —
+      and the GUI can still run them, so databases move under you
 - [ ] `UPDATE` reports success even when it changed nothing
 - [ ] One condition per `WHERE`, no `AND`/`OR`, no `ORDER BY`/`LIMIT`
 

@@ -302,7 +302,7 @@ std::string NetworkServer::executeQuery(std::string &query)
         std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
         if (logCallback) logCallback("[QUERY] " + upper + " — " + query);
 
-        std::vector<Row> rows = engine.query(query);
+        std::vector<Row> rows = engine.query(query, false);
 
         std::string pending = engine.consumePendingSwitch();
         if (!pending.empty())

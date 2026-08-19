@@ -41,6 +41,50 @@ Once you press the **Start Server** button, the **logs** section will display th
 
 ## What's new in this version
 
+### `DROP DATABASE` command
+Deletes a database and every file behind it (`.db`, `.cat`, `.wal`):
+
+```sql
+DROP DATABASE myproject
+```
+
+Available **from the GUI only** — network clients are refused, see the next section.
+
+This is **irreversible and unconfirmed** — there is no `IF EXISTS`, no soft delete, and no
+recycle bin. The statement is not written to the WAL, so it is never replayed on recovery.
+
+Two guards apply, in this order:
+
+1. **The active database cannot be dropped.** Its files are open, so Windows would refuse
+   the delete anyway. Attempting it returns
+   `Cannot drop the currently active database '<name>' (USE another database first)`.
+   The comparison is case-insensitive, because Windows filenames are — `mydb` and `MyDB`
+   name the same files, so both are rejected while `mydb` is active.
+2. **The database must exist.** Dropping a name with no `.db` file returns
+   `Database '<name>' does not exist` instead of silently reporting success.
+
+Note that the active database is **process state**, set by `USE` and shared by every
+connection — and `USE` is *not* blocked for network clients. So a `DROP DATABASE` typed in
+the GUI can fail because a remote client switched the active database a moment earlier.
+
+### `CREATE DATABASE` / `DROP DATABASE` are blocked for network clients
+Creating and destroying databases is now an operator action, not something a connected client
+can do. Both statements still parse; `Engine::query` refuses them afterwards, based on the
+statement type, before anything runs:
+
+```json
+{"type": "error", "message": "CREATE DATABASE/DROP DATABASE is not permitted for remote clients"}
+```
+
+Since the check reads the parsed statement rather than the query text, case and spacing cannot
+get around it — `create database x` and `   CrEaTe   DaTaBaSe   x` are refused identically.
+Nothing is created, deleted or switched, and the refusal is an ordinary error response, so the
+connection stays open and usable.
+
+The GUI runs on the same engine and is unaffected: locally both statements work exactly as
+described above. `USE` is deliberately still allowed over the network, so clients can move
+between existing databases — they just cannot add or remove any.
+
 ### Protocol version banner
 Every connection now begins with a version line (`NEXDB/1.0.0\n`) before authentication,
 so clients can detect an incompatible server up front instead of failing on a malformed
@@ -69,6 +113,8 @@ USE myproject
 ```
 
 `CREATE DATABASE` creates the database files on disk. `USE DATABASE` signals the client to switch context (returns `SWITCH <name>` over TCP — the client is expected to reconnect targeting that database).
+
+> Superseded in this version: `CREATE DATABASE` is no longer available to network clients — see [`CREATE DATABASE` / `DROP DATABASE` are blocked for network clients](#create-database--drop-database-are-blocked-for-network-clients) above. `USE DATABASE` is unchanged.
 
 ### Localhost bypass
 Connections from `127.0.0.1` or `::1` skip the challenge-response handshake and receive `AUTH OK` immediately. This makes local tooling (Python scripts, GUI) simpler. Remote connections still require full authentication.
@@ -341,9 +387,10 @@ db.Query("DELETE FROM users WHERE id = 2");
 
 ```sql
 -- Database management
-CREATE DATABASE myproject
+CREATE DATABASE myproject     -- GUI only; refused for network clients
 USE DATABASE myproject
 USE myproject
+DROP DATABASE oldproject      -- GUI only; deletes the files, cannot drop the active database
 
 -- Table management
 CREATE TABLE products (id INT, name STRING, price FLOAT, active BOOL)
@@ -406,7 +453,7 @@ NexDB/
 ├── Frontend/       SQL lexer + parser → AST
 ├── Engine/         Query executor
 ├── AST/            Statement types (Select, Insert, Delete, Update,
-│                   Create/Drop Table, Create/Use Database)
+│                   Create/Drop Table, Create/Drop/Use Database)
 ├── Storage/
 │   ├── Page/         Fixed-size page (4096 bytes), tagged with tableId
 │   ├── PageHeader/   Page metadata (pageId, tableId, freeSpace, rowCount)

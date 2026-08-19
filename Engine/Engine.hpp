@@ -25,7 +25,7 @@ class Engine {
                const std::string &walPath     = "databases/mydb.wal");
 
         void execute(Statement *statement);
-        std::vector<Row> query(const std::string &sql);
+        std::vector<Row> query(const std::string &sql, bool allowDatabaseAdmin = true);
 
         Catalog& getCatalog();
 
